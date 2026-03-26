@@ -291,13 +291,13 @@
   }
 
   async function loadArtists() {
+    // First load artists
     const { data, error } = await db
       .from('profiles')
       .select(`
         *,
         profile_tags(tag_id, tags(name)),
-        reviews!reviews_artist_id_fkey(rating),
-        portfolio_items(media_url, media_type, is_pinned, pin_order)
+        reviews!reviews_artist_id_fkey(rating)
       `)
       .eq('is_artist', true)
       .order('created_at', { ascending: false });
@@ -307,7 +307,23 @@
         <div class="empty"><div class="empty-icon">⚠️</div><h3>Couldn't load artists</h3><p>${error?.message || 'Please try again.'}</p></div>`;
       return;
     }
-    allArtists = data;
+
+    // Load pinned portfolio items separately
+    const artistIds = data.map(a => a.id);
+    const { data: pinnedItems } = await db
+      .from('portfolio_items')
+      .select('artist_id, media_url, media_type, is_pinned, pin_order')
+      .in('artist_id', artistIds)
+      .eq('is_pinned', true)
+      .neq('media_type', 'video')
+      .order('pin_order', { ascending: true });
+
+    // Attach pinned items to each artist
+    allArtists = data.map(a => ({
+      ...a,
+      portfolio_items: (pinnedItems || []).filter(p => p.artist_id === a.id)
+    }));
+
     renderArtists(allArtists);
   }
 
