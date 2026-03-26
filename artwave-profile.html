@@ -664,7 +664,7 @@
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('profile-wrap').style.display = 'block';
 
-    if (isOwnProfile) {
+    if (isOwnProfile && data.is_artist) {
       document.getElementById('own-profile-bar').style.display = 'block';
       document.getElementById('upload-section').style.display = 'block';
       prefillEditModal(data);
@@ -741,8 +741,11 @@
       document.getElementById('info-card').innerHTML = `<h4>Client Account</h4><p style="font-size:0.85rem;color:var(--muted)">This user commissions artwork from artists.</p>`;
     }
 
-    // Commission modal sub
-    document.getElementById('commission-modal-sub').textContent =
+    // Hide portfolio tab for clients
+    if (!p.is_artist) {
+      document.querySelectorAll('.tab')[0].style.display = 'none';
+      switchTab('about');
+    }
       `Send a request to ${p.display_name || p.username}. They'll respond within 48 hours.`;
   }
 
@@ -826,14 +829,14 @@
       <div class="rating-count">${data.length} review${data.length !== 1 ? 's' : ''}</div>
     `;
 
-    const COLORS = ['#2980b9','#e91e63','#8e44ad','#019587','#4a7c59'];
+    const REVIEW_COLORS = ['#2980b9','#e91e63','#8e44ad','#019587','#4a7c59'];
     document.getElementById('reviews-list').innerHTML = data.map((r, i) => {
       const name = r.profiles?.display_name || r.profiles?.username || 'Client';
       const date = new Date(r.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
       return `
         <div class="review-card">
           <div class="review-top">
-            <div class="review-avatar" style="background:${COLORS[i % COLORS.length]}">${getInitial(name)}</div>
+            <div class="review-avatar" style="background:${REVIEW_COLORS[i % REVIEW_COLORS.length]}">${getInitial(name)}</div>
             <div class="review-meta">
               <div class="review-name">${name}</div>
               <div class="review-stars">${starsHTML(r.rating)}</div>

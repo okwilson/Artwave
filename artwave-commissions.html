@@ -387,13 +387,13 @@
   let pendingStatus = null;
   let selectedRating = 0;
 
-  const COLORS = ['#019587','#2980b9','#8e44ad','#4a7c59','#c0392b','#e91e63','#A6BC09'];
+  const CARD_COLORS = ['#019587','#2980b9','#8e44ad','#4a7c59','#c0392b','#e91e63','#A6BC09'];
   const STATUS_ORDER = ['pending','accepted','in_progress','in_review','revision','delivered','paid','cancelled'];
   const STATUS_LABELS = { pending:'Pending', accepted:'Accepted', in_progress:'In Progress', in_review:'In Review', revision:'Revision', delivered:'Delivered', paid:'Paid ✓', cancelled:'Cancelled' };
   const STATUS_PILLS = { pending:'pill-pending', accepted:'pill-accepted', in_progress:'pill-inprogress', in_review:'pill-inreview', revision:'pill-revision', delivered:'pill-delivered', paid:'pill-paid', cancelled:'pill-cancelled' };
 
   function getInitial(name) { return (name||'?')[0].toUpperCase(); }
-  function getColor(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%COLORS.length; return COLORS[h]; }
+  function getColor(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%CARD_COLORS.length; return CARD_COLORS[h]; }
 
   function formatDate(d) {
     if (!d) return '—';
