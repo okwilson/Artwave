@@ -1,0 +1,8 @@
+{
+  "name": "artwave",
+  "version": "1.0.0",
+  "description": "Artwave — Artist Commission Platform",
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}
