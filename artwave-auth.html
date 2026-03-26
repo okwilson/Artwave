@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Artwave — Join</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --ink: #01415B;
+    --cream: #f0f7e6;
+    --warm: #dff0c0;
+    --accent: #019587;
+    --accent2: #005148;
+    --gold: #A6BC09;
+    --muted: #4a7a6a;
+    --white: #ffffff;
+    --card: #f5fcea;
+    --border: #c8dba0;
+    --green: #4a7c59;
+    --red: #b84040;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: stretch;
+  }
+
+  /* SPLIT LAYOUT */
+  .split { display: flex; width: 100%; min-height: 100vh; }
+  .split-left {
+    flex: 1; background: var(--ink); color: var(--cream);
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 3rem; position: relative; overflow: hidden;
+    min-height: 100vh;
+  }
+  .split-left::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 30%, rgba(1,149,135,0.2) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(166,188,9,0.1) 0%, transparent 50%);
+  }
+  .left-content { position: relative; z-index: 1; max-width: 400px; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 3rem; }
+  .logo span { color: var(--accent); font-style: italic; }
+  .left-content h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem; line-height: 1.15; margin-bottom: 1.25rem;
+  }
+  .left-content h1 em { color: var(--accent); font-style: italic; }
+  .left-content p { color: #c5bdb2; font-size: 1rem; line-height: 1.7; font-weight: 300; margin-bottom: 2.5rem; }
+  .feature-list { display: flex; flex-direction: column; gap: 0.85rem; }
+  .feature-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: #c5bdb2; }
+  .feature-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(1,149,135,0.2); display: flex; align-items: center;
+    justify-content: center; font-size: 1rem; flex-shrink: 0;
+  }
+  .deco-art {
+    position: absolute; bottom: 2rem; right: 2rem;
+    font-size: 7rem; opacity: 0.06; line-height: 1;
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* RIGHT PANEL */
+  .split-right {
+    width: 480px; background: var(--cream);
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 3rem 2.5rem; position: relative;
+  }
+
+  /* PAGE SYSTEM */
+  .auth-page { display: none; animation: fadeIn 0.25s ease; }
+  .auth-page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .auth-title { font-family: 'Playfair Display', serif; font-size: 1.75rem; margin-bottom: 0.4rem; }
+  .auth-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; line-height: 1.5; }
+
+  /* FORM */
+  .form-group { margin-bottom: 1.1rem; }
+  .form-group label {
+    display: block; font-size: 0.75rem; font-weight: 600;
+    margin-bottom: 0.35rem; color: var(--accent2);
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .form-group input, .form-group select {
+    width: 100%; padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.92rem;
+    background: white; color: var(--ink); outline: none;
+    transition: border 0.15s, box-shadow 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(1,149,135,0.1);
+  }
+  .form-group input.error { border-color: var(--red); }
+
+  /* ROLE TOGGLE */
+  .role-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem; }
+  .role-card {
+    border: 2px solid var(--border); border-radius: 10px; padding: 1rem 0.75rem;
+    cursor: pointer; transition: all 0.15s; text-align: center; background: white;
+  }
+  .role-card:hover { border-color: var(--accent2); }
+  .role-card.selected { border-color: var(--accent); background: #f0faf8; }
+  .role-card .role-icon { font-size: 1.75rem; margin-bottom: 0.4rem; }
+  .role-card .role-name { font-weight: 600; font-size: 0.9rem; }
+  .role-card .role-desc { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+
+  /* BUTTONS */
+  .btn-main {
+    width: 100%; padding: 0.85rem; background: var(--accent); color: white;
+    border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif;
+    font-weight: 600; font-size: 1rem; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 0.5rem;
+  }
+  .btn-main:hover { background: #017a6e; }
+  .btn-main:active { transform: scale(0.99); }
+  .btn-main:disabled { background: var(--muted); cursor: not-allowed; }
+  .btn-secondary {
+    width: 100%; padding: 0.75rem; background: transparent; color: var(--ink);
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.92rem;
+    cursor: pointer; transition: all 0.15s; margin-top: 0.5rem;
+  }
+  .btn-secondary:hover { border-color: var(--accent2); }
+
+  .switch-link {
+    text-align: center; margin-top: 1.5rem; font-size: 0.88rem; color: var(--muted);
+  }
+  .switch-link a { color: var(--accent); cursor: pointer; font-weight: 500; text-decoration: none; }
+  .switch-link a:hover { text-decoration: underline; }
+
+  /* STEP INDICATOR */
+  .steps { display: flex; gap: 0.4rem; margin-bottom: 2rem; }
+  .step-dot {
+    height: 4px; border-radius: 999px; background: var(--border);
+    flex: 1; transition: background 0.3s;
+  }
+  .step-dot.done { background: var(--accent); }
+
+  /* ERROR / SUCCESS */
+  .alert {
+    padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem;
+    margin-bottom: 1rem; display: none;
+  }
+  .alert.error { background: #fdf0f0; border: 1px solid #f5c6c6; color: var(--red); display: block; }
+  .alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--green); display: block; }
+
+  /* SPINNER */
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SUCCESS STATE */
+  .success-screen { text-align: center; padding: 1rem 0; }
+  .success-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+  .success-screen h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 0.75rem; }
+  .success-screen p { color: var(--muted); font-size: 0.92rem; line-height: 1.6; margin-bottom: 1.5rem; }
+
+  /* DIVIDER */
+  .divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.25rem 0; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .divider span { font-size: 0.78rem; color: var(--muted); }
+
+  /* ONBOARDING - artist type tags */
+  .tag-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+  .tag-btn {
+    padding: 0.35rem 0.85rem; border-radius: 999px; font-size: 0.82rem;
+    border: 1.5px solid var(--border); background: white; cursor: pointer;
+    transition: all 0.15s; font-family: 'DM Sans', sans-serif; font-weight: 500;
+  }
+  .tag-btn:hover { border-color: var(--accent2); }
+  .tag-btn.selected { background: var(--accent); color: white; border-color: var(--accent); }
+
+  @media (max-width: 768px) {
+    .split-left { display: none; }
+    .split-right { width: 100%; padding: 2rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="split">
+
+  <!-- LEFT PANEL -->
+  <div class="split-left">
+    <div class="left-content">
+      <div class="logo">Art<span>flow</span></div>
+      <h1>Your art.<br/>Your <em>business.</em></h1>
+      <p>The platform built for independent artists — manage commissions, showcase your portfolio, and get discovered by clients who love your style.</p>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-icon">🎨</div>
+          <span>Beautiful public portfolio & profile</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📋</div>
+          <span>Commission tracker & client management</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🧾</div>
+          <span>Invoices, contracts & earnings dashboard</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">⭐</div>
+          <span>Verified reviews that build your reputation</span>
+        </div>
+      </div>
+    </div>
+    <div class="deco-art">✦</div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="split-right">
+
+    <!-- PAGE: SIGN UP STEP 1 -->
+    <div class="auth-page active" id="page-signup">
+      <div class="steps">
+        <div class="step-dot done" id="dot-1"></div>
+        <div class="step-dot" id="dot-2"></div>
+        <div class="step-dot" id="dot-3"></div>
+      </div>
+      <div class="auth-title">Create your account</div>
+      <div class="auth-sub">Free forever. No credit card needed.</div>
+
+      <div class="alert" id="signup-error"></div>
+
+      <div style="margin-bottom:1.25rem;">
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--accent2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:0.6rem;">I am a…</label>
+        <div class="role-toggle">
+          <div class="role-card selected" id="role-artist" onclick="selectRole('artist')">
+            <div class="role-icon">🎨</div>
+            <div class="role-name">Artist</div>
+            <div class="role-desc">I create & sell commissions</div>
+          </div>
+          <div class="role-card" id="role-client" onclick="selectRole('client')">
+            <div class="role-icon">🛍️</div>
+            <div class="role-name">Client</div>
+            <div class="role-desc">I hire & commission artists</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Your name" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="At least 8 characters" />
+      </div>
+      <button class="btn-main" id="signup-btn" onclick="handleSignup()">Create Free Account</button>
+      <div class="switch-link">Already have an account? <a onclick="showPage('login')">Log in</a></div>
+    </div>
+
+    <!-- PAGE: ONBOARDING (artist only) -->
+    <div class="auth-page" id="page-onboarding">
+      <div class="steps">
+        <div class="step-dot done"></div>
+        <div class="step-dot done"></div>
+        <div class="step-dot" id="dot-3b"></div>
+      </div>
+      <div class="auth-title">Set up your profile</div>
+      <div class="auth-sub">This is what clients will see when they find you.</div>
+
+      <div class="alert" id="onboarding-error"></div>
+
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="ob-username" placeholder="e.g. marenvoss (no spaces)" />
+      </div>
+      <div class="form-group">
+        <label>Location <span style="color:var(--muted);font-weight:400;text-transform:none">(optional)</span></label>
+        <input type="text" id="ob-location" placeholder="e.g. Berlin, DE" />
+      </div>
+      <div class="form-group">
+        <label>Short Bio</label>
+        <input type="text" id="ob-bio" placeholder="e.g. Illustrator specialising in character design" />
+      </div>
+
+      <div id="artist-fields">
+        <div class="form-group">
+          <label>Your styles <span style="color:var(--muted);font-weight:400;text-transform:none">(pick all that apply)</span></label>
+          <div class="tag-grid" id="tag-grid"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="form-group">
+            <label>Starting price (USD)</label>
+            <input type="number" id="ob-price" placeholder="e.g. 45" />
+          </div>
+          <div class="form-group">
+            <label>Delivery (days)</label>
+            <input type="number" id="ob-delivery" placeholder="e.g. 7" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Commissions</label>
+          <select id="ob-open">
+            <option value="true">Open — accepting commissions</option>
+            <option value="false">Closed — not accepting right now</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-main" id="ob-btn" onclick="handleOnboarding()">Finish Setup</button>
+    </div>
+
+    <!-- PAGE: SUCCESS -->
+    <div class="auth-page" id="page-success">
+      <div class="success-screen">
+        <div class="success-icon">🎉</div>
+        <h2>You're all set!</h2>
+        <p>Your Artwave account is ready. Welcome to the community — let's get your profile looking great.</p>
+        <button class="btn-main" onclick="goToDashboard()">Go to my Dashboard →</button>
+        <button class="btn-secondary" onclick="goToDiscover()">Browse Artists First</button>
+      </div>
+    </div>
+
+    <!-- PAGE: LOG IN -->
+    <div class="auth-page" id="page-login">
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Log in to your Artwave account.</div>
+
+      <div class="alert" id="login-error"></div>
+      <div class="alert" id="login-success"></div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <div style="text-align:right;margin-top:-0.5rem;margin-bottom:0.75rem;">
+        <a onclick="showPage('forgot')" style="font-size:0.82rem;color:var(--accent);cursor:pointer;">Forgot password?</a>
+      </div>
+      <button class="btn-main" id="login-btn" onclick="handleLogin()">Log In</button>
+      <div class="switch-link">Don't have an account? <a onclick="showPage('signup')">Sign up free</a></div>
+    </div>
+
+    <!-- PAGE: FORGOT PASSWORD -->
+    <div class="auth-page" id="page-forgot">
+      <div class="auth-title">Reset password</div>
+      <div class="auth-sub">Enter your email and we'll send you a reset link.</div>
+
+      <div class="alert" id="forgot-error"></div>
+      <div class="alert" id="forgot-success"></div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="forgot-email" placeholder="you@example.com" />
+      </div>
+      <button class="btn-main" id="forgot-btn" onclick="handleForgot()">Send Reset Link</button>
+      <button class="btn-secondary" onclick="showPage('login')">← Back to Log In</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── SUPABASE INIT ──────────────────────────────
+  const SUPABASE_URL = 'https://buwwogywlmqajtczgekc.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1d3dvZ3l3bG1xYWp0Y3pnZWtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NzgyNzEsImV4cCI6MjA5MDA1NDI3MX0.SHQWKWYTf5zcKX3D4HkFkrnp1SNSLM_IfNbmKkuRweg';
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // ── STATE ──────────────────────────────────────
+  let selectedRole = 'artist';
+  let selectedTags = [];
+  let currentUser = null;
+
+  const TAGS = [
+    'Illustration','2D Animation','3D Animation','3D Modelling',
+    'Texture Painting','Rigging','Simulation','Retopology',
+    'Oil Painting','Acrylic Painting','Watercolor','Digital Art',
+    'Portrait','Character Design','Concept Art','Book Cover',
+    'Traditional Sculpture','Etchings','Screen Printing',
+    'Tattoo Design','Graphic Design','Editorial','Logo',
+    'Fantasy','Anime','Landscape'
+  ];
+
+  // ── PAGE NAV ───────────────────────────────────
+  function showPage(name) {
+    document.querySelectorAll('.auth-page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+  }
+
+  // ── ROLE SELECT ────────────────────────────────
+  function selectRole(role) {
+    selectedRole = role;
+    document.getElementById('role-artist').classList.toggle('selected', role === 'artist');
+    document.getElementById('role-client').classList.toggle('selected', role === 'client');
+  }
+
+  // ── BUILD TAG GRID ─────────────────────────────
+  function buildTagGrid() {
+    const grid = document.getElementById('tag-grid');
+    grid.innerHTML = '';
+    TAGS.forEach(tag => {
+      const btn = document.createElement('button');
+      btn.className = 'tag-btn';
+      btn.textContent = tag;
+      btn.onclick = () => {
+        if (selectedTags.includes(tag)) {
+          selectedTags = selectedTags.filter(t => t !== tag);
+          btn.classList.remove('selected');
+        } else {
+          selectedTags.push(tag);
+          btn.classList.add('selected');
+        }
+      };
+      grid.appendChild(btn);
+    });
+    // Show/hide artist-specific fields
+    document.getElementById('artist-fields').style.display =
+      selectedRole === 'artist' ? 'block' : 'none';
+  }
+
+  // ── SIGN UP ────────────────────────────────────
+  async function handleSignup() {
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const errEl = document.getElementById('signup-error');
+    errEl.className = 'alert';
+
+    if (!name || !email || !password) {
+      errEl.className = 'alert error';
+      errEl.textContent = 'Please fill in all fields.';
+      return;
+    }
+    if (password.length < 8) {
+      errEl.className = 'alert error';
+      errEl.textContent = 'Password must be at least 8 characters.';
+      return;
+    }
+
+    const btn = document.getElementById('signup-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Creating account…';
+
+    const { data, error } = await db.auth.signUp({
+      email, password,
+      options: { data: { display_name: name } }
+    });
+
+    if (error) {
+      errEl.className = 'alert error';
+      errEl.textContent = error.message;
+      btn.disabled = false;
+      btn.textContent = 'Create Free Account';
+      return;
+    }
+
+    currentUser = data.user;
+    buildTagGrid();
+    showPage('onboarding');
+    btn.disabled = false;
+    btn.textContent = 'Create Free Account';
+  }
+
+  // ── ONBOARDING ─────────────────────────────────
+  async function handleOnboarding() {
+    const username = document.getElementById('ob-username').value.trim().toLowerCase().replace(/\s+/g, '');
+    const location = document.getElementById('ob-location').value.trim();
+    const bio = document.getElementById('ob-bio').value.trim();
+    const errEl = document.getElementById('onboarding-error');
+    errEl.className = 'alert';
+
+    if (!username) {
+      errEl.className = 'alert error';
+      errEl.textContent = 'Please choose a username.';
+      return;
+    }
+    if (!/^[a-z0-9_]+$/.test(username)) {
+      errEl.className = 'alert error';
+      errEl.textContent = 'Username can only contain letters, numbers, and underscores.';
+      return;
+    }
+
+    const btn = document.getElementById('ob-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Saving profile…';
+
+    const profileData = {
+      id: currentUser.id,
+      username,
+      display_name: currentUser.user_metadata?.display_name || username,
+      bio,
+      location,
+      is_artist: selectedRole === 'artist',
+      commissions_open: selectedRole === 'artist'
+        ? document.getElementById('ob-open').value === 'true'
+        : false,
+      starting_price: selectedRole === 'artist'
+        ? parseFloat(document.getElementById('ob-price').value) || null
+        : null,
+      delivery_days: selectedRole === 'artist'
+        ? parseInt(document.getElementById('ob-delivery').value) || null
+        : null,
+    };
+
+    const { error: profileError } = await db.from('profiles').insert(profileData);
+
+    if (profileError) {
+      errEl.className = 'alert error';
+      errEl.textContent = profileError.message.includes('duplicate')
+        ? 'That username is already taken — try another.'
+        : profileError.message;
+      btn.disabled = false;
+      btn.textContent = 'Finish Setup';
+      return;
+    }
+
+    // Save tags if artist
+    if (selectedRole === 'artist' && selectedTags.length > 0) {
+      const { data: tagRows } = await db.from('tags').select('id, name').in('name', selectedTags);
+      if (tagRows && tagRows.length > 0) {
+        const tagLinks = tagRows.map(t => ({ profile_id: currentUser.id, tag_id: t.id }));
+        await db.from('profile_tags').insert(tagLinks);
+      }
+    }
+
+    showPage('success');
+    btn.disabled = false;
+    btn.textContent = 'Finish Setup';
+  }
+
+  // ── LOG IN ─────────────────────────────────────
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    const sucEl = document.getElementById('login-success');
+    errEl.className = 'alert';
+    sucEl.className = 'alert';
+
+    if (!email || !password) {
+      errEl.className = 'alert error';
+      errEl.textContent = 'Please enter your email and password.';
+      return;
+    }
+
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Logging in…';
+
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      errEl.className = 'alert error';
+      errEl.textContent = 'Incorrect email or password. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Log In';
+      return;
+    }
+
+    sucEl.className = 'alert success';
+    sucEl.textContent = '✓ Logged in successfully! Redirecting…';
+    setTimeout(() => showPage('success'), 1000);
+    btn.disabled = false;
+    btn.textContent = 'Log In';
+  }
+
+  // ── FORGOT PASSWORD ────────────────────────────
+  async function handleForgot() {
+    const email = document.getElementById('forgot-email').value.trim();
+    const errEl = document.getElementById('forgot-error');
+    const sucEl = document.getElementById('forgot-success');
+    errEl.className = 'alert';
+    sucEl.className = 'alert';
+
+    if (!email) {
+      errEl.className = 'alert error';
+      errEl.textContent = 'Please enter your email address.';
+      return;
+    }
+
+    const btn = document.getElementById('forgot-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Sending…';
+
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.href
+    });
+
+    if (error) {
+      errEl.className = 'alert error';
+      errEl.textContent = error.message;
+    } else {
+      sucEl.className = 'alert success';
+      sucEl.textContent = '✓ Reset link sent! Check your inbox.';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Link';
+  }
+
+  // ── NAV AFTER AUTH ─────────────────────────────
+  function goToDashboard() {
+    window.location.href = 'artwave-dashboard.html';
+  }
+  function goToDiscover() {
+    window.location.href = 'artwave-discover.html';
+  }
+
+  // ── CHECK EXISTING SESSION ─────────────────────
+  async function init() {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      showPage('success');
+    }
+  }
+  init();
+</script>
+</body>
+</html>

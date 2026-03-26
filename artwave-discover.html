@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Artwave — Discover Artists</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --ink: #01415B;
+    --cream: #e8f4e0;
+    --warm: #c8e0a0;
+    --accent: #019587;
+    --accent2: #005148;
+    --gold: #A6BC09;
+    --muted: #4a7a6a;
+    --card: #d8edcc;
+    --border: #01415B;
+    --green: #005148;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background-color: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  nav#artwave-nav {
+    background: #01415B !important;
+    z-index: 1000 !important;
+    border-bottom: 3px solid #A6BC09 !important;
+  }
+
+  /* HERO */
+  .hero {
+    background: var(--ink); color: var(--cream);
+    padding: 6rem 2rem 4rem; text-align: center;
+    position: relative; overflow: hidden;
+    border-bottom: 4px solid var(--gold);
+  }
+  /* Halftone dot gradient — large dots bottom-left fading to small top-right */
+  .hero::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      radial-gradient(circle, rgba(1,149,135,0.55) 1px, transparent 1px),
+      radial-gradient(circle, rgba(166,188,9,0.3) 1px, transparent 1px);
+    background-size: 18px 18px, 9px 9px;
+    background-position: 0 0, 9px 9px;
+    mask-image: radial-gradient(ellipse at 15% 85%, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 40%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at 15% 85%, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 40%, transparent 75%);
+  }
+  /* Second halftone layer — fades in from top right */
+  .hero-dots2 {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(circle, rgba(166,188,9,0.4) 1.5px, transparent 1.5px);
+    background-size: 14px 14px;
+    mask-image: radial-gradient(ellipse at 90% 10%, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 40%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 90% 10%, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 40%, transparent 70%);
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
+  .hero h1 {
+    font-family: 'Playfair Display', serif; font-size: 3.4rem; line-height: 1.1; margin-bottom: 1rem;
+    text-shadow: 4px 4px 0 var(--accent2);
+  }
+  .hero h1 em { color: var(--gold); font-style: italic; }
+  .hero p { color: #a8c8b8; font-size: 1.05rem; font-weight: 300; margin-bottom: 2rem; line-height: 1.6; }
+  .hero-search { display: flex; gap: 0.5rem; max-width: 440px; margin: 0 auto; }
+  .hero-search input {
+    flex: 1; padding: 0.75rem 1rem; border-radius: 3px;
+    border: 2px solid var(--accent); background: rgba(255,255,255,0.1);
+    color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none;
+    box-shadow: 3px 3px 0 var(--accent2);
+  }
+  .hero-search input::placeholder { color: #6a9a8a; }
+  .hero-search button {
+    background: var(--gold); color: var(--ink); border: 2px solid var(--ink);
+    padding: 0.75rem 1.25rem; border-radius: 3px;
+    font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.9rem;
+    cursor: pointer; white-space: nowrap; box-shadow: 3px 3px 0 var(--ink);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .hero-search button:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+  .hero-search button:active { transform: translate(3px,3px); box-shadow: none; }
+
+  /* HATCH DIVIDER */
+  .hatch-strip {
+    height: 14px;
+    background-color: var(--gold);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14'%3E%3Cpath d='M0 14L10 0' stroke='%2301415B' stroke-width='1.5' opacity='0.4'/%3E%3C/svg%3E");
+    border-top: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink);
+  }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex; gap: 0.5rem; padding: 1rem 2rem;
+    background: var(--accent2); border-bottom: 3px solid var(--ink);
+    flex-wrap: wrap; align-items: center;
+    position: sticky; top: 58px; z-index: 50;
+  }
+  .filter-label { font-size: 0.75rem; font-weight: 700; color: var(--warm); margin-right: 0.25rem; text-transform: uppercase; letter-spacing: .1em; }
+  .chip {
+    padding: 0.3rem 0.85rem; border-radius: 3px; font-size: 0.78rem; font-weight: 700;
+    border: 2px solid rgba(255,255,255,0.5); background: transparent; cursor: pointer;
+    transition: all 0.1s; color: var(--cream); font-family: 'DM Sans', sans-serif;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.25); letter-spacing: .02em;
+  }
+  .chip:hover { background: rgba(255,255,255,0.12); transform: translate(-1px,-1px); box-shadow: 3px 3px 0 rgba(0,0,0,0.3); }
+  .chip.active { background: var(--gold); color: var(--ink); border-color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+
+  /* SECTION LABEL */
+  .section-label {
+    padding: 1.5rem 2rem 0.75rem; max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .section-label h2 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--ink); font-weight: 700; white-space: nowrap; }
+  .hatch-line {
+    flex: 1; height: 6px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M0 6L8 0' stroke='%2301415B' stroke-width='1' opacity='0.3'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    border-top: 1.5px solid rgba(1,65,91,0.2);
+  }
+
+  /* ARTISTS GRID */
+  .artists-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 1.75rem; padding: 0.5rem 2rem 3rem; max-width: 1200px; margin: 0 auto;
+  }
+
+  /* ARTIST CARD */
+  .artist-card {
+    background: white; border-radius: 3px;
+    border: 2.5px solid var(--ink); cursor: pointer;
+    box-shadow: 6px 6px 0 var(--ink);
+    transition: transform 0.12s, box-shadow 0.12s;
+    position: relative; overflow: hidden;
+  }
+  .artist-card::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 10L10 0' stroke='%2301415B' stroke-width='0.4' opacity='0.05'/%3E%3C/svg%3E");
+  }
+  .artist-card:hover { transform: translate(-3px,-3px); box-shadow: 9px 9px 0 var(--ink); }
+  .artist-card:active { transform: translate(4px,4px); box-shadow: 2px 2px 0 var(--ink); }
+
+  .card-banner { height: 140px; position: relative; overflow: hidden; border-bottom: 2.5px solid var(--ink); }
+  .card-banner-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center; font-size: 3rem; position: relative;
+  }
+  .card-banner-placeholder::after {
+    content: ''; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M0 10L10 0' stroke='%23ffffff' stroke-width='0.8' opacity='0.1'/%3E%3C/svg%3E");
+  }
+  .card-avatar {
+    width: 54px; height: 54px; border-radius: 50%;
+    border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+    position: absolute; bottom: -24px; left: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; font-weight: 700; color: white;
+    font-family: 'Playfair Display', serif; z-index: 1;
+  }
+  .open-badge {
+    position: absolute; top: 10px; right: 10px;
+    background: var(--gold); color: var(--ink);
+    font-size: 0.65rem; font-weight: 800; padding: 0.2rem 0.55rem;
+    border-radius: 2px; letter-spacing: .06em; text-transform: uppercase;
+    border: 1.5px solid var(--ink); box-shadow: 2px 2px 0 var(--ink);
+  }
+  .closed-badge {
+    position: absolute; top: 10px; right: 10px;
+    background: #555; color: white;
+    font-size: 0.65rem; font-weight: 800; padding: 0.2rem 0.55rem;
+    border-radius: 2px; letter-spacing: .06em; text-transform: uppercase;
+    border: 1.5px solid var(--ink); box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+  }
+
+  .card-body { padding: 1.75rem 1rem 1.1rem; position: relative; z-index: 1; }
+  .card-name { font-family: 'Playfair Display', serif; font-size: 1.08rem; font-weight: 700; }
+  .card-handle { color: var(--muted); font-size: 0.78rem; margin-bottom: 0.5rem; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.65rem; }
+  .tag {
+    background: var(--warm); color: var(--accent2); font-size: 0.7rem; padding: 0.15rem 0.55rem;
+    border-radius: 2px; font-weight: 700; border: 1.5px solid var(--accent2);
+    text-transform: uppercase; letter-spacing: .03em;
+  }
+  .card-stars { display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: var(--gold); }
+  .card-stars span { color: var(--muted); font-size: 0.75rem; }
+  .card-price {
+    font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem;
+    padding-top: 0.5rem; border-top: 2px dashed rgba(1,65,91,0.2);
+  }
+  .card-price strong { color: var(--ink); font-size: 0.95rem; }
+
+  /* EMPTY / LOADING */
+  .empty { text-align: center; padding: 4rem 2rem; color: var(--muted); grid-column: 1/-1; }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .empty h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--ink); margin-bottom: 0.5rem; }
+  .spinner { display: inline-block; width: 36px; height: 36px; border: 3px solid var(--warm); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 2.2rem; }
+    .artists-grid { padding: 1rem; gap: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="artwave-nav"></nav>
+
+<div style="padding-top: 58px;">
+  <div class="hero">
+    <div class="hero-dots2"></div>
+    <div class="hero-content">
+      <h1>Find your next <em>favourite artist</em></h1>
+      <p>Commission original artwork, illustrations, and animations from talented independent artists worldwide.</p>
+      <div class="hero-search">
+        <input type="text" id="search-input" placeholder="Search by name or style…" oninput="filterArtists()"/>
+        <button onclick="filterArtists()">Search</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hatch-strip"></div>
+
+  <div class="filter-bar">
+    <span class="filter-label">Style:</span>
+    <button class="chip active" onclick="setTag('all', this)">All</button>
+    <button class="chip" onclick="setTag('Illustration', this)">Illustration</button>
+    <button class="chip" onclick="setTag('2D Animation', this)">2D Animation</button>
+    <button class="chip" onclick="setTag('3D Animation', this)">3D Animation</button>
+    <button class="chip" onclick="setTag('3D Modelling', this)">3D Modelling</button>
+    <button class="chip" onclick="setTag('Texture Painting', this)">Texture Painting</button>
+    <button class="chip" onclick="setTag('Rigging', this)">Rigging</button>
+    <button class="chip" onclick="setTag('Simulation', this)">Simulation</button>
+    <button class="chip" onclick="setTag('Retopology', this)">Retopology</button>
+    <button class="chip" onclick="setTag('Oil Painting', this)">Oil Painting</button>
+    <button class="chip" onclick="setTag('Acrylic Painting', this)">Acrylic Painting</button>
+    <button class="chip" onclick="setTag('Watercolor', this)">Watercolor</button>
+    <button class="chip" onclick="setTag('Digital Art', this)">Digital Art</button>
+    <button class="chip" onclick="setTag('Portrait', this)">Portrait</button>
+    <button class="chip" onclick="setTag('Character Design', this)">Character Design</button>
+    <button class="chip" onclick="setTag('Concept Art', this)">Concept Art</button>
+    <button class="chip" onclick="setTag('Traditional Sculpture', this)">Traditional Sculpture</button>
+    <button class="chip" onclick="setTag('Etchings', this)">Etchings</button>
+    <button class="chip" onclick="setTag('Screen Printing', this)">Screen Printing</button>
+    <button class="chip" onclick="setTag('Tattoo Design', this)">Tattoo Design</button>
+    <button class="chip" onclick="setTag('Graphic Design', this)">Graphic Design</button>
+    <button class="chip" onclick="setTag('Anime', this)">Anime</button>
+  </div>
+
+  <div class="section-label">
+    <h2 id="results-label">Discover Artists</h2>
+    <div class="hatch-line"></div>
+  </div>
+
+  <div class="artists-grid" id="artists-grid">
+    <div class="empty"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<script src="artwave-nav.js"></script>
+<script>
+  let allArtists = [];
+  let activeTag = 'all';
+  let searchQuery = '';
+
+  const CARD_COLORS = ['#019587','#005148','#A6BC09','#01415B','#017a6e','#4a7a6a','#2980b9'];
+  const BANNERS = [
+    'linear-gradient(135deg,#005148,#019587)',
+    'linear-gradient(135deg,#01415B,#005148)',
+    'linear-gradient(135deg,#019587,#A6BC09)',
+    'linear-gradient(135deg,#005148,#01415B)',
+    'linear-gradient(135deg,#A6BC09,#019587)',
+    'linear-gradient(135deg,#01415B,#019587)',
+    'linear-gradient(135deg,#4a7a6a,#005148)',
+  ];
+  const EMOJIS = ['🎨','🌊','✨','🌿','🔥','💫','🖌️','🦋','🌙','⚡'];
+
+  function getColor(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%CARD_COLORS.length; return CARD_COLORS[h]; }
+  function getBanner(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%BANNERS.length; return BANNERS[h]; }
+  function getEmoji(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%EMOJIS.length; return EMOJIS[h]; }
+  function getInitial(name) { return (name||'?')[0].toUpperCase(); }
+  function starsHTML(n) { return '★'.repeat(Math.round(n||0)) + '☆'.repeat(5-Math.round(n||0)); }
+
+  async function init() {
+    await initNav();
+    await loadArtists();
+  }
+
+  async function loadArtists() {
+    const { data, error } = await db
+      .from('profiles')
+      .select('*, profile_tags(tag_id, tags(name)), reviews!reviews_artist_id_fkey(rating)')
+      .eq('is_artist', true)
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      document.getElementById('artists-grid').innerHTML = `
+        <div class="empty"><div class="empty-icon">⚠️</div><h3>Couldn't load artists</h3><p>${error?.message || 'Please try again.'}</p></div>`;
+      return;
+    }
+    allArtists = data;
+    renderArtists(allArtists);
+  }
+
+  function setTag(tag, el) {
+    activeTag = tag;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    filterArtists();
+  }
+
+  function filterArtists() {
+    searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+    let filtered = allArtists;
+    if (activeTag !== 'all') {
+      filtered = filtered.filter(a => (a.profile_tags || []).some(pt => pt.tags?.name === activeTag));
+    }
+    if (searchQuery) {
+      filtered = filtered.filter(a =>
+        (a.display_name || '').toLowerCase().includes(searchQuery) ||
+        (a.username || '').toLowerCase().includes(searchQuery) ||
+        (a.bio || '').toLowerCase().includes(searchQuery) ||
+        (a.profile_tags || []).some(pt => pt.tags?.name?.toLowerCase().includes(searchQuery))
+      );
+    }
+    document.getElementById('results-label').textContent =
+      filtered.length === allArtists.length ? 'Discover Artists' : `${filtered.length} artist${filtered.length !== 1 ? 's' : ''} found`;
+    renderArtists(filtered);
+  }
+
+  function renderArtists(artists) {
+    const grid = document.getElementById('artists-grid');
+    if (!artists.length) {
+      grid.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><h3>No artists found</h3><p>Try a different search or style filter.</p></div>`;
+      return;
+    }
+    grid.innerHTML = artists.map(a => {
+      const name = a.display_name || a.username || 'Artist';
+      const color = getColor(a.username);
+      const banner = getBanner(a.username);
+      const emoji = getEmoji(a.username);
+      const tags = (a.profile_tags || []).map(pt => pt.tags?.name).filter(Boolean);
+      const ratings = (a.reviews || []).map(r => r.rating).filter(Boolean);
+      const avgRating = ratings.length ? (ratings.reduce((s,r)=>s+r,0)/ratings.length).toFixed(1) : null;
+      return `
+        <div class="artist-card" onclick="window.location.href='artwave-profile.html?u=${a.username}'">
+          <div class="card-banner">
+            <div class="card-banner-placeholder" style="background:${banner}">${emoji}</div>
+            <div class="card-avatar" style="background:${color}">${getInitial(name)}</div>
+            <span class="${a.commissions_open ? 'open-badge' : 'closed-badge'}">${a.commissions_open ? '● Open' : '● Closed'}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-name">${name}</div>
+            <div class="card-handle">@${a.username}${a.location ? ' · ' + a.location : ''}</div>
+            <div class="card-tags">${tags.slice(0,3).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+            ${avgRating
+              ? `<div class="card-stars">${starsHTML(avgRating)} <span>${avgRating} · ${ratings.length} review${ratings.length!==1?'s':''}</span></div>`
+              : `<div class="card-stars" style="color:var(--muted);font-size:0.8rem">No reviews yet</div>`}
+            <div class="card-price">${a.starting_price ? `From <strong>$${a.starting_price}</strong>` : '<strong>Contact for pricing</strong>'}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  init();
+</script>
+</body>
+</html>

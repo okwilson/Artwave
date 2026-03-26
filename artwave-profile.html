@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Artwave — Artist Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --ink: #01415B;
+    --cream: #f0f7e6;
+    --warm: #dff0c0;
+    --accent: #019587;
+    --accent2: #005148;
+    --gold: #A6BC09;
+    --muted: #4a7a6a;
+    --white: #ffffff;
+    --card: #f5fcea;
+    --border: #c8dba0;
+    --green: #4a7c59;
+    --red: #b84040;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
+
+  /* NAV */
+  .btn-primary {
+    background: var(--accent); color: white; border: none; padding: 0.45rem 1.2rem;
+    border-radius: 4px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    font-size: 0.85rem; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #017a6e; }
+  
+  
+
+  /* LOADING */
+  .loading-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; flex-direction: column; gap: 1rem;
+  }
+  .loading-spinner {
+    width: 40px; height: 40px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--muted); font-size: 0.9rem; }
+
+  /* NOT FOUND */
+  .not-found {
+    display: none; text-align: center; padding: 6rem 2rem;
+  }
+  .not-found .emoji { font-size: 3rem; margin-bottom: 1rem; }
+  .not-found h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 0.75rem; }
+  .not-found p { color: var(--muted); margin-bottom: 1.5rem; }
+
+  /* PROFILE */
+  .profile-wrap { display: none; padding-top: 58px; }
+
+  /* BANNER */
+  .profile-banner {
+    height: 220px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #2d1f12 0%, #01415B 50%, #3a1a0a 100%);
+  }
+  .banner-img { width: 100%; height: 100%; object-fit: cover; }
+  .banner-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(26,20,16,0.6) 100%);
+  }
+  .banner-deco {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; font-size: 8rem; opacity: 0.07;
+    letter-spacing: 3rem; font-family: 'Playfair Display', serif;
+  }
+
+  /* PROFILE HEADER */
+  .profile-header {
+    background: white; border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .profile-header-inner {
+    max-width: 960px; margin: 0 auto; padding: 0 2rem;
+    display: flex; align-items: flex-end; gap: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+  .profile-avatar {
+    width: 100px; height: 100px; border-radius: 50%;
+    border: 4px solid white; margin-top: -50px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif; font-size: 2.5rem;
+    font-weight: 700; color: white; flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    position: relative; z-index: 1;
+  }
+  .profile-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .profile-info { flex: 1; padding-top: 0.75rem; }
+  .profile-name { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 700; }
+  .profile-handle { color: var(--muted); font-size: 0.88rem; margin-bottom: 0.5rem; }
+  .profile-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .tag {
+    background: var(--warm); color: var(--accent2);
+    font-size: 0.75rem; padding: 0.2rem 0.6rem;
+    border-radius: 4px; font-weight: 500;
+  }
+  .profile-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; padding-top: 0.75rem; }
+  .commission-status {
+    font-size: 0.75rem; font-weight: 600; padding: 0.3rem 0.75rem;
+    border-radius: 999px; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .status-open { background: #e8f5e9; color: var(--green); }
+  .status-closed { background: var(--warm); color: var(--muted); }
+  .btn-commission {
+    background: var(--accent); color: white; border: none;
+    padding: 0.7rem 1.5rem; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-weight: 600;
+    font-size: 0.95rem; cursor: pointer; transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-commission:hover { background: #017a6e; }
+  .btn-commission:disabled { background: var(--muted); cursor: not-allowed; }
+  .btn-follow {
+    background: transparent; color: var(--ink);
+    border: 1.5px solid var(--border); padding: 0.6rem 1.5rem;
+    border-radius: 8px; font-family: 'DM Sans', sans-serif;
+    font-weight: 500; font-size: 0.9rem; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-follow:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-follow.following { background: var(--warm); border-color: var(--accent2); color: var(--accent2); }
+
+  /* STATS BAR */
+  .stats-bar {
+    max-width: 960px; margin: 0 auto; padding: 1rem 2rem 0;
+    display: flex; gap: 2.5rem;
+  }
+  .stat { text-align: center; }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; }
+  .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* TABS */
+  .tabs {
+    max-width: 960px; margin: 0 auto; padding: 0 2rem;
+    display: flex; gap: 0; border-bottom: 2px solid var(--border);
+    margin-top: 1rem;
+  }
+  .tab {
+    padding: 0.75rem 1.25rem; font-size: 0.88rem; font-weight: 500;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -2px; transition: all 0.15s; color: var(--muted);
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* BODY */
+  .profile-body { max-width: 960px; margin: 0 auto; padding: 2rem; }
+
+  /* TAB CONTENT */
+  .tab-content { display: none; animation: fadeIn 0.2s ease; }
+  .tab-content.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* ABOUT */
+  .about-grid { display: grid; grid-template-columns: 1fr 280px; gap: 2rem; }
+  .about-bio { font-size: 0.95rem; line-height: 1.75; color: #3a2f25; margin-bottom: 1.5rem; }
+  .about-details { display: flex; flex-direction: column; gap: 0.6rem; }
+  .detail-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; color: var(--muted); }
+  .detail-icon { font-size: 1rem; width: 20px; text-align: center; }
+  .info-card {
+    background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem;
+  }
+  .info-card h4 { font-family: 'Playfair Display', serif; font-size: 1rem; margin-bottom: 1rem; }
+  .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+  .info-row:last-child { border-bottom: none; }
+  .info-row span { color: var(--muted); }
+  .info-row strong { color: var(--ink); }
+
+  /* PORTFOLIO */
+  .portfolio-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+  }
+  .portfolio-item {
+    aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+    cursor: pointer; position: relative; background: var(--warm);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .portfolio-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+  .portfolio-item:hover img { transform: scale(1.05); }
+  .portfolio-item-overlay {
+    position: absolute; inset: 0; background: rgba(26,20,16,0.6);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s; color: white; padding: 1rem; text-align: center;
+  }
+  .portfolio-item:hover .portfolio-item-overlay { opacity: 1; }
+  .portfolio-item-title { font-weight: 600; font-size: 0.9rem; }
+  .portfolio-empty {
+    grid-column: 1/-1; text-align: center; padding: 3rem;
+    color: var(--muted); font-size: 0.9rem;
+  }
+  .portfolio-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center; font-size: 3rem;
+  }
+
+  /* UPLOAD AREA (own profile) */
+  .upload-area {
+    border: 2px dashed var(--border); border-radius: 10px;
+    padding: 2rem; text-align: center; cursor: pointer;
+    transition: all 0.2s; margin-bottom: 1.5rem;
+    background: white; display: block; width: 100%;
+  }
+  .upload-area:hover { border-color: var(--accent); background: #f0faf8; }
+  .upload-area input { display: none; }
+  .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .upload-text { font-size: 0.88rem; color: var(--muted); }
+  .upload-text strong { color: var(--accent); }
+
+  /* REVIEWS */
+  .reviews-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; }
+  .rating-big { text-align: center; }
+  .rating-num { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; line-height: 1; }
+  .rating-stars { color: var(--gold); font-size: 1.1rem; margin: 0.25rem 0; }
+  .rating-count { font-size: 0.78rem; color: var(--muted); }
+  .reviews-list { display: flex; flex-direction: column; gap: 1rem; }
+  .review-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.25rem;
+  }
+  .review-top { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .review-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: white; font-size: 0.9rem; flex-shrink: 0;
+  }
+  .review-meta { flex: 1; }
+  .review-name { font-weight: 600; font-size: 0.9rem; }
+  .review-stars { color: var(--gold); font-size: 0.82rem; }
+  .review-type { font-size: 0.78rem; color: var(--muted); }
+  .review-text { font-size: 0.88rem; color: #3a2f25; line-height: 1.65; }
+  .review-date { font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; }
+  .reviews-empty { text-align: center; padding: 2.5rem; color: var(--muted); font-size: 0.9rem; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(26,20,16,0.7); z-index: 200;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 14px; width: 90%; max-width: 500px;
+    padding: 2rem; position: relative; animation: modalIn 0.2s ease;
+    max-height: 90vh; overflow-y: auto;
+  }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+  .modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: none; border: none; font-size: 1.5rem;
+    cursor: pointer; color: var(--muted); line-height: 1;
+  }
+  .modal h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 0.3rem; }
+  .modal-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label {
+    display: block; font-size: 0.75rem; font-weight: 600;
+    margin-bottom: 0.35rem; color: var(--accent2);
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 0.7rem 0.9rem;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    background: var(--card); color: var(--ink); outline: none;
+    transition: border 0.15s;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group textarea { min-height: 100px; resize: vertical; }
+  .modal-footer { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
+  .btn-cancel {
+    background: none; border: 1.5px solid var(--border); color: var(--muted);
+    padding: 0.55rem 1.2rem; border-radius: 6px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+  }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px;
+  }
+  .alert { padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; }
+  .alert.error { background: #fdf0f0; border: 1px solid #f5c6c6; color: var(--red); }
+  .alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--green); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 300;
+    background: var(--ink); color: var(--cream); padding: 0.85rem 1.5rem;
+    border-radius: 8px; font-size: 0.88rem; border-left: 4px solid var(--accent);
+    opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: none; }
+
+  /* OWN PROFILE EDIT BANNER */
+  .own-profile-bar {
+    background: var(--ink); color: var(--cream);
+    text-align: center; padding: 0.6rem; font-size: 0.85rem;
+    display: none;
+  }
+  .own-profile-bar a { color: var(--gold); cursor: pointer; font-weight: 500; margin-left: 0.5rem; }
+
+  @media (max-width: 640px) {
+    .about-grid { grid-template-columns: 1fr; }
+    .portfolio-grid { grid-template-columns: repeat(2, 1fr); }
+    .profile-header-inner { flex-wrap: wrap; }
+    .stats-bar { gap: 1.25rem; flex-wrap: wrap; }
+  }
+
+  /* ── SHARED NAV ── */
+  nav#artwave-
+  nav#artwave-nav .nav-logo {
+    font-family: 'Playfair Display', serif; font-size: 1.4rem;
+    letter-spacing: .04em; cursor: pointer; color: var(--cream);
+    background: none; border: none;
+  }
+  nav#artwave-nav
+  nav#artwave-nav .nav-links { display: flex; gap: 0.25rem; }
+  nav#artwave-nav .nav-btn {
+    background: none; border: none; color: var(--cream);
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+    padding: 0.4rem 1rem; border-radius: 4px; cursor: pointer; transition: background 0.15s;
+  }
+  nav#artwave-nav .nav-btn:hover,
+  nav#artwave-nav .nav-btn.active { background: rgba(1,149,135,0.25); color: var(--gold); }
+  nav#artwave-nav .nav-right { display: flex; gap: 0.5rem; align-items: center; }
+  nav#artwave-nav .nav-user { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--cream); cursor: pointer; }
+  nav#artwave-nav .nav-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: white; }
+  nav#artwave-nav .btn-primary { background: var(--accent); color: white; border: none; padding: 0.45rem 1.2rem; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; }
+  nav#artwave-nav .btn-primary:hover { background: #017a6e; }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="artwave-nav"></nav>
+
+<!-- OWN PROFILE BAR -->
+<div class="own-profile-bar" id="own-profile-bar">
+  This is your public profile — this is what clients see.
+  <a onclick="openModal('edit-profile')">Edit Profile</a>
+  <a onclick="openModal('upload')">Upload Artwork</a>
+</div>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loading-screen" style="padding-top:58px;">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading profile…</div>
+</div>
+
+<!-- NOT FOUND -->
+<div class="not-found" id="not-found" style="padding-top:58px;">
+  <div class="emoji">🎨</div>
+  <h2>Artist not found</h2>
+  <p>This profile doesn't exist or may have been removed.</p>
+  <button class="btn-primary" onclick="window.location.href='artwave-discover.html'">Browse Artists</button>
+</div>
+
+<!-- PROFILE -->
+<div class="profile-wrap" id="profile-wrap">
+
+  <!-- BANNER -->
+  <div class="profile-banner" id="profile-banner">
+    <div class="banner-deco">✦ ✦ ✦</div>
+    <div class="banner-overlay"></div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="profile-header">
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="profile-header-inner">
+      <div class="profile-avatar" id="profile-avatar"></div>
+      <div class="profile-info">
+        <div class="profile-name" id="profile-name"></div>
+        <div class="profile-handle" id="profile-handle"></div>
+        <div class="profile-tags" id="profile-tags"></div>
+      </div>
+      <div class="profile-actions" id="profile-actions"></div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('portfolio')">Portfolio</div>
+      <div class="tab" onclick="switchTab('about')">About</div>
+      <div class="tab" onclick="switchTab('reviews')">Reviews</div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="profile-body">
+
+    <!-- PORTFOLIO TAB -->
+    <div class="tab-content active" id="tab-portfolio">
+      <div id="upload-section" style="display:none">
+        <div class="upload-area" onclick="openModal('upload')">
+          <div class="upload-icon">🖼️</div>
+          <div class="upload-text"><strong>Upload new artwork</strong> — images, GIFs, or videos</div>
+        </div>
+      </div>
+      <div class="portfolio-grid" id="portfolio-grid">
+        <div class="portfolio-empty">Loading portfolio…</div>
+      </div>
+    </div>
+
+    <!-- ABOUT TAB -->
+    <div class="tab-content" id="tab-about">
+      <div class="about-grid">
+        <div>
+          <p class="about-bio" id="about-bio"></p>
+          <div class="about-details" id="about-details"></div>
+        </div>
+        <div>
+          <div class="info-card" id="info-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEWS TAB -->
+    <div class="tab-content" id="tab-reviews">
+      <div class="reviews-header">
+        <div class="rating-big" id="rating-big"></div>
+      </div>
+      <div class="reviews-list" id="reviews-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: COMMISSION REQUEST -->
+<div class="modal-overlay" id="modal-commission">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('commission')">×</button>
+    <h3>Request a Commission</h3>
+    <div class="modal-sub" id="commission-modal-sub"></div>
+    <div id="commission-alert"></div>
+    <div class="form-group">
+      <label>Commission Type</label>
+      <select id="c-type">
+        <option>Character Design</option><option>Portrait</option>
+        <option>Book Cover</option><option>Illustration</option>
+        <option>Concept Art</option><option>Animation</option><option>Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="c-desc" placeholder="Describe what you'd like — characters, style, mood, references…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Your Budget (USD)</label>
+      <input type="number" id="c-budget" placeholder="e.g. 100" />
+    </div>
+    <div class="form-group">
+      <label>Deadline (optional)</label>
+      <input type="date" id="c-deadline" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('commission')">Cancel</button>
+      <button class="btn-primary" id="c-submit-btn" onclick="submitCommission()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: UPLOAD ARTWORK -->
+<div class="modal-overlay" id="modal-upload">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('upload')">×</button>
+    <h3>Upload Artwork</h3>
+    <div class="modal-sub">Add a new piece to your portfolio.</div>
+    <div id="upload-alert"></div>
+
+    <!-- AI WARNING BANNER -->
+    <div style="background:#fff8e1;border:2px solid #A6BC09;border-radius:6px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#01415B;line-height:1.5">
+      🎨 <strong>Artwave is a platform for human-made art only.</strong> AI-generated images are not permitted. All uploads are scanned and can be flagged by the community.
+    </div>
+
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" id="u-title" placeholder="e.g. Forest Spirit Character Design" />
+    </div>
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <input type="text" id="u-desc" placeholder="Brief description of the piece" />
+    </div>
+    <div class="form-group">
+      <label>File (image, GIF, or video)</label>
+      <input type="file" id="u-file" accept="image/*,video/*" style="background:white;padding:0.5rem;" />
+    </div>
+
+    <!-- CONFIRMATION CHECKBOX -->
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:6px;padding:0.85rem 1rem;margin-bottom:0.5rem">
+      <label style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;font-size:0.85rem;line-height:1.5;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:400">
+        <input type="checkbox" id="u-confirm" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;accent-color:var(--accent)"/>
+        <span>I confirm this is <strong>my own original work</strong>, created entirely by me without AI generation tools. I understand that uploading AI-generated content may result in account suspension.</span>
+      </label>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('upload')">Cancel</button>
+      <button class="btn-primary" id="u-submit-btn" onclick="uploadArtwork()">Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDIT PROFILE -->
+<div class="modal-overlay" id="modal-edit-profile">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('edit-profile')">×</button>
+    <h3>Edit Profile</h3>
+    <div class="modal-sub">Update your public profile information.</div>
+    <div id="edit-alert"></div>
+    <div class="form-group">
+      <label>Display Name</label>
+      <input type="text" id="e-name" />
+    </div>
+    <div class="form-group">
+      <label>Bio</label>
+      <textarea id="e-bio"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Location</label>
+      <input type="text" id="e-location" placeholder="e.g. Berlin, DE" />
+    </div>
+    <div class="form-group">
+      <label>Starting Price (USD)</label>
+      <input type="number" id="e-price" />
+    </div>
+    <div class="form-group">
+      <label>Delivery Time (days)</label>
+      <input type="number" id="e-delivery" />
+    </div>
+    <div class="form-group">
+      <label>Commission Status</label>
+      <select id="e-open">
+        <option value="true">Open — accepting commissions</option>
+        <option value="false">Closed — not accepting right now</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('edit-profile')">Cancel</button>
+      <button class="btn-primary" id="e-submit-btn" onclick="saveProfile()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="modal-overlay" id="modal-lightbox" style="background:rgba(0,0,0,0.92)">
+  <div style="position:relative;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:1rem">
+    <button onclick="closeModal('lightbox')" style="position:absolute;top:-2.5rem;right:0;background:none;border:none;color:white;font-size:2rem;cursor:pointer;line-height:1">×</button>
+    <div id="lightbox-media" style="max-width:90vw;max-height:80vh;display:flex;align-items:center;justify-content:center"></div>
+    <div id="lightbox-title" style="color:white;font-family:'Playfair Display',serif;font-size:1.1rem;text-align:center"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let currentUser = null;
+  let profileData = null;
+  let isOwnProfile = false;
+
+  const AVATAR_COLORS = ['#019587','#2980b9','#8e44ad','#4a7c59','#c0392b','#e91e63','#A6BC09'];
+
+  function getInitial(name) { return (name || '?')[0].toUpperCase(); }
+  function getColor(str) { let h = 0; for (let c of (str||'')) h = (h*31 + c.charCodeAt(0)) % AVATAR_COLORS.length; return AVATAR_COLORS[h]; }
+  function starsHTML(n) { return '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n)); }
+
+  // ── GET USERNAME FROM URL ──────────────────────
+  function getUsernameFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('u');
+  }
+
+  // ── FLAG ITEM ──────────────────────────────────
+  async function flagItem(itemId, btn) {
+    if (!currentUser) { showToast('Please log in to flag artwork'); return; }
+    btn.textContent = '🚩 Flagging…';
+    btn.disabled = true;
+
+    const { error } = await window.AF.db.from('portfolio_flags').insert({
+      portfolio_item_id: itemId,
+      flagged_by: currentUser.id,
+      reason: 'suspected_ai'
+    });
+
+    if (error) {
+      if (error.message.includes('duplicate')) {
+        showToast('You have already flagged this item');
+      } else {
+        showToast('Could not flag: ' + error.message);
+      }
+      btn.textContent = '🚩'; btn.disabled = false;
+      return;
+    }
+
+    // Increment flag count
+    const { data: item } = await window.AF.db
+      .from('portfolio_items').select('flag_count').eq('id', itemId).single();
+    const newCount = (item?.flag_count || 0) + 1;
+    await window.AF.db.from('portfolio_items').update({
+      flag_count: newCount,
+      ai_flagged: newCount >= 3
+    }).eq('id', itemId);
+
+    showToast('🚩 Flagged for review — thank you!');
+    await loadPortfolio(profileData.id);
+  }
+
+  // ── INIT ───────────────────────────────────────
+  async function init() {
+    await initNav();
+    if (window.AF.user) currentUser = window.AF.user;
+
+    const username = getUsernameFromURL();
+    if (!username) {
+      if (currentUser) {
+        const { data } = await window.AF.db.from('profiles').select('username').eq('id', currentUser.id).single();
+        if (data) { window.location.search = '?u=' + data.username; return; }
+      }
+      showNotFound();
+      return;
+    }
+
+    await loadProfile(username);
+  }
+
+  // ── UPDATE NAV (legacy stub — shared nav handles this) ──
+  function updateNav(user) {
+    const navRight = document.getElementById('nav-right');
+    navRight.innerHTML = `
+      <div class="nav-user">
+        <div class="nav-avatar" style="background:${getColor(user.email)}">${getInitial(user.email)}</div>
+        <span style="font-size:0.82rem">${user.email}</span>
+      </div>
+    `;
+  }
+
+  // ── LOAD PROFILE ───────────────────────────────
+  async function loadProfile(username) {
+    const { data, error } = await db
+      .from('profiles')
+      .select(`*, profile_tags(tag_id, tags(name))`)
+      .eq('username', username)
+      .single();
+
+    if (error || !data) { showNotFound(); return; }
+
+    profileData = data;
+    isOwnProfile = currentUser && currentUser.id === data.id;
+
+    document.title = `${data.display_name || data.username} — Artwave`;
+
+    renderProfile(data);
+    await Promise.all([loadPortfolio(data.id), loadReviews(data.id)]);
+
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('profile-wrap').style.display = 'block';
+
+    if (isOwnProfile) {
+      document.getElementById('own-profile-bar').style.display = 'block';
+      document.getElementById('upload-section').style.display = 'block';
+      prefillEditModal(data);
+    }
+  }
+
+  // ── RENDER PROFILE ─────────────────────────────
+  function renderProfile(p) {
+    const color = getColor(p.username);
+    const initial = getInitial(p.display_name || p.username);
+
+    // Avatar
+    const avatarEl = document.getElementById('profile-avatar');
+    avatarEl.style.background = color;
+    if (p.avatar_url) {
+      avatarEl.innerHTML = `<img src="${p.avatar_url}" alt="${p.display_name}"/>`;
+    } else {
+      avatarEl.textContent = initial;
+    }
+
+    // Name & handle
+    document.getElementById('profile-name').textContent = p.display_name || p.username;
+    document.getElementById('profile-handle').textContent =
+      `@${p.username}${p.location ? ' · ' + p.location : ''}`;
+
+    // Tags
+    const tagsEl = document.getElementById('profile-tags');
+    const tags = (p.profile_tags || []).map(pt => pt.tags?.name).filter(Boolean);
+    tagsEl.innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join('');
+
+    // Actions
+    const actionsEl = document.getElementById('profile-actions');
+    if (isOwnProfile) {
+      actionsEl.innerHTML = `
+        <span class="commission-status ${p.commissions_open ? 'status-open' : 'status-closed'}">
+          ${p.commissions_open ? '● Commissions Open' : '● Commissions Closed'}
+        </span>
+        <button class="btn-commission" onclick="openModal('edit-profile')">Edit Profile</button>
+      `;
+    } else if (p.is_artist) {
+      actionsEl.innerHTML = `
+        <span class="commission-status ${p.commissions_open ? 'status-open' : 'status-closed'}">
+          ${p.commissions_open ? '● Commissions Open' : '● Commissions Closed'}
+        </span>
+        <button class="btn-commission" ${!p.commissions_open ? 'disabled' : ''} onclick="openCommissionModal()">
+          ${p.commissions_open ? 'Request Commission' : 'Commissions Closed'}
+        </button>
+        <button class="btn-follow" id="follow-btn" onclick="toggleFollow()">Follow</button>
+      `;
+    }
+
+    // Stats
+    document.getElementById('stats-bar').innerHTML = `
+      <div class="stat"><div class="stat-num" id="stat-reviews">—</div><div class="stat-label">Reviews</div></div>
+      <div class="stat"><div class="stat-num" id="stat-rating">—</div><div class="stat-label">Rating</div></div>
+      <div class="stat"><div class="stat-num">${p.follower_count || 0}</div><div class="stat-label">Followers</div></div>
+    `;
+
+    // About tab
+    document.getElementById('about-bio').textContent = p.bio || 'No bio yet.';
+    const details = [];
+    if (p.location) details.push(`<div class="detail-row"><span class="detail-icon">📍</span>${p.location}</div>`);
+    if (p.is_artist && p.delivery_days) details.push(`<div class="detail-row"><span class="detail-icon">⏱️</span>Delivers in ${p.delivery_days} days</div>`);
+    document.getElementById('about-details').innerHTML = details.join('');
+
+    if (p.is_artist) {
+      document.getElementById('info-card').innerHTML = `
+        <h4>Commission Info</h4>
+        <div class="info-row"><span>Starting price</span><strong>${p.starting_price ? '$' + p.starting_price : 'Contact me'}</strong></div>
+        <div class="info-row"><span>Delivery time</span><strong>${p.delivery_days ? p.delivery_days + ' days' : 'Varies'}</strong></div>
+        <div class="info-row"><span>Status</span><strong style="color:${p.commissions_open ? 'var(--green)' : 'var(--muted)'}">${p.commissions_open ? 'Open' : 'Closed'}</strong></div>
+      `;
+    } else {
+      document.getElementById('info-card').innerHTML = `<h4>Client Account</h4><p style="font-size:0.85rem;color:var(--muted)">This user commissions artwork from artists.</p>`;
+    }
+
+    // Commission modal sub
+    document.getElementById('commission-modal-sub').textContent =
+      `Send a request to ${p.display_name || p.username}. They'll respond within 48 hours.`;
+  }
+
+  // ── LOAD PORTFOLIO ─────────────────────────────
+  async function loadPortfolio(artistId) {
+    const { data } = await db
+      .from('portfolio_items')
+      .select('*')
+      .eq('artist_id', artistId)
+      .order('created_at', { ascending: false });
+
+    const grid = document.getElementById('portfolio-grid');
+
+    if (!data || data.length === 0) {
+      grid.innerHTML = `<div class="portfolio-empty">${isOwnProfile ? 'Your portfolio is empty — upload your first piece above!' : 'No portfolio items yet.'}</div>`;
+      return;
+    }
+
+    const PLACEHOLDERS = ['🦊','🧚','🐉','🌸','🔮','🌿','🦋','🎭','🌙','⚡'];
+    grid.innerHTML = data.map((item, i) => {
+      const isHidden = item.ai_flagged && item.flag_count >= 3;
+      return `
+      <div class="portfolio-item" style="${isHidden ? 'opacity:0.4;filter:blur(4px)' : ''}">
+        <div onclick="openLightbox('${item.media_url}', '${(item.title||'').replace(/'/g,"\\'")}', '${item.media_type||'image'}')">
+          ${item.media_url
+            ? item.media_type === 'video'
+              ? `<video src="${item.media_url}" muted loop playsinline style="width:100%;height:100%;object-fit:cover"></video>`
+              : `<img src="${item.media_url}" alt="${item.title || 'Artwork'}" loading="lazy"/>`
+            : `<div class="portfolio-placeholder">${PLACEHOLDERS[i % PLACEHOLDERS.length]}</div>`
+          }
+          <div class="portfolio-item-overlay">
+            <div class="portfolio-item-title">${item.title || 'Untitled'}</div>
+            ${item.description ? `<div style="font-size:0.78rem;margin-top:0.25rem;opacity:0.85">${item.description}</div>` : ''}
+          </div>
+        </div>
+        ${isHidden ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(184,64,64,0.15);font-size:0.75rem;font-weight:700;color:#b84040;text-align:center;padding:0.5rem">⚠️ Hidden — flagged for review</div>` : ''}
+        ${!isOwnProfile && currentUser ? `
+          <button onclick="flagItem('${item.id}', this)" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:3px;padding:0.2rem 0.4rem;font-size:0.68rem;cursor:pointer;opacity:0;transition:opacity 0.2s" class="flag-btn">
+            🚩 ${item.flag_count > 0 ? item.flag_count : ''}
+          </button>` : ''}
+        ${item.ai_flagged ? `<div style="position:absolute;top:6px;left:6px;background:#b84040;color:white;font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:2px">⚠️ Under review</div>` : ''}
+      </div>`;
+    }).join('');
+
+    // Show flag buttons on hover
+    grid.querySelectorAll('.portfolio-item').forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        const btn = item.querySelector('.flag-btn');
+        if (btn) btn.style.opacity = '1';
+      });
+      item.addEventListener('mouseleave', () => {
+        const btn = item.querySelector('.flag-btn');
+        if (btn) btn.style.opacity = '0';
+      });
+    });
+  }
+
+  // ── LOAD REVIEWS ───────────────────────────────
+  async function loadReviews(artistId) {
+    const { data } = await db
+      .from('reviews')
+      .select('*, profiles!reviews_client_id_fkey(display_name, username)')
+      .eq('artist_id', artistId)
+      .order('created_at', { ascending: false });
+
+    if (!data || data.length === 0) {
+      document.getElementById('reviews-list').innerHTML = `<div class="reviews-empty">No reviews yet.</div>`;
+      document.getElementById('rating-big').innerHTML = `<div style="color:var(--muted);font-size:0.9rem">No reviews yet</div>`;
+      document.getElementById('stat-reviews').textContent = '0';
+      document.getElementById('stat-rating').textContent = '—';
+      return;
+    }
+
+    const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
+    document.getElementById('stat-reviews').textContent = data.length;
+    document.getElementById('stat-rating').textContent = avg.toFixed(1);
+
+    document.getElementById('rating-big').innerHTML = `
+      <div class="rating-num">${avg.toFixed(1)}</div>
+      <div class="rating-stars">${starsHTML(avg)}</div>
+      <div class="rating-count">${data.length} review${data.length !== 1 ? 's' : ''}</div>
+    `;
+
+    const COLORS = ['#2980b9','#e91e63','#8e44ad','#019587','#4a7c59'];
+    document.getElementById('reviews-list').innerHTML = data.map((r, i) => {
+      const name = r.profiles?.display_name || r.profiles?.username || 'Client';
+      const date = new Date(r.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      return `
+        <div class="review-card">
+          <div class="review-top">
+            <div class="review-avatar" style="background:${COLORS[i % COLORS.length]}">${getInitial(name)}</div>
+            <div class="review-meta">
+              <div class="review-name">${name}</div>
+              <div class="review-stars">${starsHTML(r.rating)}</div>
+            </div>
+            <div class="review-date">${date}</div>
+          </div>
+          <div class="review-text">${r.body || ''}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── TABS ───────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const names = ['portfolio','about','reviews'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  // ── COMMISSION ─────────────────────────────────
+  function openCommissionModal() {
+    if (!currentUser) { showToast('Please log in to request a commission'); return; }
+    openModal('commission');
+  }
+
+  async function submitCommission() {
+    const desc = document.getElementById('c-desc').value.trim();
+    const alertEl = document.getElementById('commission-alert');
+    if (!desc) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = 'Please describe what you want.';
+      return;
+    }
+
+    const btn = document.getElementById('c-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Sending…';
+
+    const { error } = await window.AF.db.from('commissions').insert({
+      artist_id: profileData.id,
+      client_id: currentUser.id,
+      title: document.getElementById('c-type').value,
+      description: desc,
+      commission_type: document.getElementById('c-type').value,
+      amount: parseFloat(document.getElementById('c-budget').value) || null,
+      due_date: document.getElementById('c-deadline').value || null,
+      status: 'pending'
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Send Request';
+
+    if (error) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = error.message;
+      return;
+    }
+
+    closeModal('commission');
+    showToast('Commission request sent! 🎨');
+  }
+
+  // ── UPLOAD ARTWORK ─────────────────────────────
+  async function uploadArtwork() {
+    const title = document.getElementById('u-title').value.trim();
+    const desc = document.getElementById('u-desc').value.trim();
+    const file = document.getElementById('u-file').files[0];
+    const confirmed = document.getElementById('u-confirm').checked;
+    const alertEl = document.getElementById('upload-alert');
+    alertEl.innerHTML = '';
+
+    if (!title) { alertEl.className = 'alert error'; alertEl.textContent = 'Please add a title.'; return; }
+    if (!file) { alertEl.className = 'alert error'; alertEl.textContent = 'Please select a file to upload.'; return; }
+    if (!confirmed) { alertEl.className = 'alert error'; alertEl.textContent = 'Please confirm this is your own original work.'; return; }
+
+    const btn = document.getElementById('u-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Checking artwork…';
+
+    // ── STEP 1: AI DETECTION ──────────────────────
+    let aiScore = null;
+    let aiFlagged = false;
+    if (file.type.startsWith('image/')) {
+      try {
+        btn.innerHTML = '<span class="spinner"></span>Scanning for AI content…';
+        const formData = new FormData();
+        formData.append('media', file);
+        const res = await fetch('https://api.thehive.ai/api/v2/task/sync', {
+          method: 'POST',
+          headers: { 'Authorization': 'Token YOUR_HIVE_API_KEY' },
+          body: formData
+        });
+        if (res.ok) {
+          const result = await res.json();
+          // Hive returns classes array — look for ai_generated class
+          const classes = result?.status?.[0]?.response?.output?.[0]?.classes || [];
+          const aiClass = classes.find(c => c.class === 'ai_generated');
+          aiScore = aiClass?.score || 0;
+          if (aiScore > 0.80) {
+            alertEl.className = 'alert error';
+            alertEl.innerHTML = `🚫 <strong>Upload blocked.</strong> This image has been detected as likely AI-generated (${Math.round(aiScore*100)}% confidence). Artwave only accepts human-made artwork.`;
+            btn.disabled = false; btn.textContent = 'Upload';
+            return;
+          }
+          if (aiScore > 0.50) aiFlagged = true;
+        }
+      } catch (e) {
+        // Detection unavailable — allow upload, rely on community flagging
+        console.warn('AI detection unavailable:', e);
+      }
+    }
+
+    // ── STEP 2: UPLOAD FILE ───────────────────────
+    btn.innerHTML = '<span class="spinner"></span>Uploading…';
+    const ext = file.name.split('.').pop();
+    const path = `${currentUser.id}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await window.AF.db.storage.from('portfolio').upload(path, file);
+    if (uploadError) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = 'Upload failed: ' + uploadError.message;
+      btn.disabled = false; btn.textContent = 'Upload';
+      return;
+    }
+    const { data: urlData } = window.AF.db.storage.from('portfolio').getPublicUrl(path);
+    const mediaUrl = urlData.publicUrl;
+
+    // ── STEP 3: SAVE TO DATABASE ──────────────────
+    const { error } = await window.AF.db.from('portfolio_items').insert({
+      artist_id: currentUser.id,
+      title, description: desc,
+      media_url: mediaUrl,
+      media_type: file.type.startsWith('video') ? 'video' : 'image',
+      ai_score: aiScore,
+      ai_flagged: aiFlagged,
+      confirmed_original: true,
+      flag_count: 0
+    });
+
+    btn.disabled = false; btn.textContent = 'Upload';
+
+    if (error) { alertEl.className = 'alert error'; alertEl.textContent = error.message; return; }
+
+    if (aiFlagged) {
+      alertEl.className = 'alert error';
+      alertEl.textContent = '⚠️ Your artwork was uploaded but flagged for manual review — our system detected it may contain AI-generated elements.';
+      setTimeout(() => { closeModal('upload'); loadPortfolio(currentUser.id); }, 3000);
+    } else {
+      closeModal('upload');
+      showToast('Artwork uploaded! ✨');
+      await loadPortfolio(currentUser.id);
+    }
+  }
+
+  // ── EDIT PROFILE ───────────────────────────────
+  function prefillEditModal(p) {
+    document.getElementById('e-name').value = p.display_name || '';
+    document.getElementById('e-bio').value = p.bio || '';
+    document.getElementById('e-location').value = p.location || '';
+    document.getElementById('e-price').value = p.starting_price || '';
+    document.getElementById('e-delivery').value = p.delivery_days || '';
+    document.getElementById('e-open').value = p.commissions_open ? 'true' : 'false';
+  }
+
+  async function saveProfile() {
+    const alertEl = document.getElementById('edit-alert');
+    const btn = document.getElementById('e-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Saving…';
+
+    const { error } = await window.AF.db.from('profiles').update({
+      display_name: document.getElementById('e-name').value.trim(),
+      bio: document.getElementById('e-bio').value.trim(),
+      location: document.getElementById('e-location').value.trim(),
+      starting_price: parseFloat(document.getElementById('e-price').value) || null,
+      delivery_days: parseInt(document.getElementById('e-delivery').value) || null,
+      commissions_open: document.getElementById('e-open').value === 'true'
+    }).eq('id', currentUser.id);
+
+    btn.disabled = false; btn.textContent = 'Save Changes';
+
+    if (error) { alertEl.className = 'alert error'; alertEl.textContent = error.message; return; }
+
+    closeModal('edit-profile');
+    showToast('Profile updated!');
+    await loadProfile(profileData.username);
+  }
+
+  // ── FOLLOW ─────────────────────────────────────
+  async function toggleFollow() {
+    if (!currentUser) { showToast('Please log in to follow artists'); return; }
+    showToast('Following ' + (profileData.display_name || profileData.username) + '!');
+  }
+
+  // ── MODALS ─────────────────────────────────────
+  function openModal(name) { document.getElementById('modal-' + name).classList.add('open'); }
+  function closeModal(name) { document.getElementById('modal-' + name).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+  });
+
+  // ── NOT FOUND ──────────────────────────────────
+  function showNotFound() {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('not-found').style.display = 'block';
+  }
+
+  // ── LIGHTBOX ───────────────────────────────────
+  function openLightbox(url, title, type) {
+    if (!url) return;
+    const media = document.getElementById('lightbox-media');
+    if (type === 'video') {
+      media.innerHTML = `<video src="${url}" controls autoplay style="max-width:90vw;max-height:78vh;border-radius:8px"></video>`;
+    } else {
+      media.innerHTML = `<img src="${url}" style="max-width:90vw;max-height:78vh;border-radius:8px;object-fit:contain" alt="${title}"/>`;
+    }
+    document.getElementById('lightbox-title').textContent = title || '';
+    openModal('lightbox');
+  }
+
+  // ── TOAST ──────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // init() called after nav.js loads
+</script>
+<script src="artwave-nav.js"></script>
+<script>init();</script>
+</body>
+</html>

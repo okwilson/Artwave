@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Artwave — Commissions</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --ink: #01415B;
+    --cream: #f0f7e6;
+    --warm: #dff0c0;
+    --accent: #019587;
+    --accent2: #005148;
+    --gold: #A6BC09;
+    --muted: #4a7a6a;
+    --white: #ffffff;
+    --card: #f5fcea;
+    --border: #c8dba0;
+    --green: #4a7c59;
+    --red: #b84040;
+    --blue: #2980b9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+  /* NAV */
+  .btn-primary {
+    background: var(--accent); color: white; border: none; padding: 0.45rem 1.2rem;
+    border-radius: 4px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    font-size: 0.85rem; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #017a6e; }
+
+  /* LAYOUT */
+  .page-wrap { padding-top: 58px; max-width: 1100px; margin: 0 auto; padding-left: 2rem; padding-right: 2rem; }
+
+  /* PAGE HEADER */
+  .page-header { padding: 2rem 0 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .page-title { font-family: 'Playfair Display', serif; font-size: 2rem; }
+  .page-sub { color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; }
+
+  /* TABS */
+  .commission-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
+  .ctab {
+    padding: 0.7rem 1.25rem; font-size: 0.88rem; font-weight: 500;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -2px; transition: all 0.15s; color: var(--muted);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .ctab:hover { color: var(--ink); }
+  .ctab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .ctab-count {
+    background: var(--warm); color: var(--accent2); font-size: 0.72rem;
+    font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 999px;
+  }
+  .ctab.active .ctab-count { background: var(--accent); color: white; }
+
+  /* TAB CONTENT */
+  .tab-panel { display: none; animation: fadeIn 0.2s ease; }
+  .tab-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* COMMISSION CARDS */
+  .commission-list { display: flex; flex-direction: column; gap: 1rem; }
+  .commission-card {
+    background: white; border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.5rem; cursor: pointer; transition: box-shadow 0.2s, transform 0.15s;
+    display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start;
+  }
+  .commission-card:hover { box-shadow: 0 6px 24px rgba(26,20,16,0.08); transform: translateY(-1px); }
+  .commission-card.urgent { border-left: 4px solid var(--red); }
+  .commission-card.new { border-left: 4px solid var(--gold); }
+
+  .cc-top { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+  .cc-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: white; font-size: 0.9rem; flex-shrink: 0;
+  }
+  .cc-name { font-weight: 600; font-size: 0.95rem; }
+  .cc-type { font-size: 0.8rem; color: var(--muted); }
+  .cc-desc { font-size: 0.88rem; color: #4a3f35; line-height: 1.6; margin-bottom: 0.75rem; }
+  .cc-meta { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+  .cc-meta-item { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 0.3rem; }
+  .cc-meta-item strong { color: var(--ink); }
+
+  .cc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
+  .status-pill {
+    display: inline-block; padding: 0.25rem 0.7rem; border-radius: 999px;
+    font-size: 0.73rem; font-weight: 600; letter-spacing: .03em; white-space: nowrap;
+  }
+  .pill-pending   { background: #fff8e1; color: #019587; }
+  .pill-accepted  { background: #e8f4fd; color: var(--blue); }
+  .pill-inprogress{ background: #e0f5f3; color: #e65100; }
+  .pill-inreview  { background: #f3e5f5; color: #8e44ad; }
+  .pill-revision  { background: #e0f5f3; color: #c2185b; }
+  .pill-delivered { background: #e8f5e9; color: var(--green); }
+  .pill-paid      { background: #e8f5e9; color: var(--green); border: 1px solid #a5d6a7; }
+  .pill-cancelled { background: var(--warm); color: var(--muted); }
+
+  .cc-amount { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; }
+  .cc-due { font-size: 0.78rem; color: var(--muted); }
+  .cc-due.overdue { color: var(--red); font-weight: 600; }
+
+  .cc-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+  .btn-sm {
+    padding: 0.4rem 0.9rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600;
+    border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-accept { background: var(--green); color: white; }
+  .btn-accept:hover { background: #3a6347; }
+  .btn-decline { background: transparent; color: var(--red); border: 1.5px solid var(--red); }
+  .btn-decline:hover { background: #fdf0f0; }
+  .btn-progress { background: var(--accent); color: white; }
+  .btn-progress:hover { background: #017a6e; }
+  .btn-deliver { background: var(--blue); color: white; }
+  .btn-deliver:hover { background: #1f6a9a; }
+  .btn-invoice { background: var(--ink); color: white; }
+  .btn-invoice:hover { background: #2d2118; }
+  .btn-view { background: var(--warm); color: var(--ink); }
+  .btn-view:hover { background: var(--border); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--ink); margin-bottom: 0.5rem; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 3rem; color: var(--muted); }
+  .spinner {
+    display: inline-block; width: 28px; height: 28px;
+    border: 3px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 0.75rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(26,20,16,0.7);
+    z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 14px; width: 90%; max-width: 560px;
+    padding: 2rem; position: relative; animation: modalIn 0.2s ease;
+    max-height: 90vh; overflow-y: auto;
+  }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--muted); }
+  .modal h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 0.3rem; }
+  .modal-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--accent2); text-transform: uppercase; letter-spacing: .06em; }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; background: var(--card); color: var(--ink); outline: none; transition: border 0.15s;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+  .modal-footer { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
+  .btn-cancel { background: none; border: 1.5px solid var(--border); color: var(--muted); padding: 0.55rem 1.2rem; border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; }
+  .btn-modal-primary { background: var(--accent); color: white; border: none; padding: 0.6rem 1.4rem; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.92rem; cursor: pointer; transition: background 0.15s; }
+  .btn-modal-primary:hover { background: #017a6e; }
+  .btn-modal-primary:disabled { background: var(--muted); cursor: not-allowed; }
+  .inline-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+
+  /* DETAIL MODAL */
+  .detail-section { margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+  .detail-section:last-child { border-bottom: none; margin-bottom: 0; }
+  .detail-section h4 { font-size: 0.75rem; font-weight: 600; color: var(--accent2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 0.6rem; }
+  .detail-row { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 0.4rem; }
+  .detail-row span { color: var(--muted); }
+  .detail-row strong { color: var(--ink); text-align: right; }
+  .detail-desc { font-size: 0.88rem; color: #3a2f25; line-height: 1.65; }
+  .status-timeline { display: flex; flex-direction: column; gap: 0.5rem; }
+  .timeline-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; }
+  .timeline-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .timeline-dot.done { background: var(--green); }
+  .timeline-dot.current { background: var(--accent); box-shadow: 0 0 0 3px rgba(1,149,135,0.2); }
+  .timeline-dot.pending { background: var(--border); }
+
+  /* INVOICE PREVIEW */
+  .invoice-preview {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.25rem; margin-bottom: 1rem;
+  }
+  .invoice-row { display: flex; justify-content: space-between; font-size: 0.88rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+  .invoice-row:last-child { border-bottom: none; font-weight: 700; font-size: 1rem; }
+
+  /* ALERT */
+  .alert { padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; }
+  .alert.error { background: #fdf0f0; border: 1px solid #f5c6c6; color: var(--red); }
+  .alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--green); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 2rem; right: 2rem; z-index: 300; background: var(--ink); color: var(--cream); padding: 0.85rem 1.5rem; border-radius: 8px; font-size: 0.88rem; border-left: 4px solid var(--accent); opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: none; }
+
+  /* NOT LOGGED IN */
+  .auth-wall { text-align: center; padding: 5rem 2rem; }
+  .auth-wall .emoji { font-size: 3rem; margin-bottom: 1rem; }
+  .auth-wall h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 0.75rem; }
+  .auth-wall p { color: var(--muted); margin-bottom: 1.5rem; }
+
+  @media (max-width: 600px) {
+    .commission-card { grid-template-columns: 1fr; }
+    .cc-right { align-items: flex-start; }
+  }
+
+  /* ── SHARED NAV ── */
+  nav#artwave-
+  nav#artwave-nav .nav-logo {
+    font-family: 'Playfair Display', serif; font-size: 1.4rem;
+    letter-spacing: .04em; cursor: pointer; color: var(--cream);
+    background: none; border: none;
+  }
+  nav#artwave-nav
+  nav#artwave-nav .nav-links { display: flex; gap: 0.25rem; }
+  nav#artwave-nav .nav-btn {
+    background: none; border: none; color: var(--cream);
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+    padding: 0.4rem 1rem; border-radius: 4px; cursor: pointer; transition: background 0.15s;
+  }
+  nav#artwave-nav .nav-btn:hover,
+  nav#artwave-nav .nav-btn.active { background: rgba(1,149,135,0.25); color: var(--gold); }
+  nav#artwave-nav .nav-right { display: flex; gap: 0.5rem; align-items: center; }
+  nav#artwave-nav .nav-user { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--cream); cursor: pointer; }
+  nav#artwave-nav .nav-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: white; }
+  nav#artwave-nav .btn-primary { background: var(--accent); color: white; border: none; padding: 0.45rem 1.2rem; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; }
+  nav#artwave-nav .btn-primary:hover { background: #017a6e; }
+
+</style>
+</head>
+<body>
+
+<nav id="artwave-nav"></nav>
+
+<div class="page-wrap" style="padding-top: 78px;">
+
+  <!-- AUTH WALL -->
+  <div class="auth-wall" id="auth-wall" style="display:none">
+    <div class="emoji">🔒</div>
+    <h2>Log in to view commissions</h2>
+    <p>You need an account to manage or request commissions.</p>
+    <button class="btn-primary" onclick="window.location.href='artwave-auth.html'" style="font-size:0.95rem;padding:0.65rem 1.5rem;">Log In or Sign Up</button>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="main-content" style="display:none">
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="page-title">My Commissions</div>
+        <div class="page-sub" id="page-sub"></div>
+      </div>
+    </div>
+
+    <!-- ARTIST VIEW TABS -->
+    <div id="artist-view" style="display:none">
+      <div class="commission-tabs">
+        <div class="ctab active" onclick="switchTab('requests')" id="tab-requests">
+          Incoming Requests <span class="ctab-count" id="count-requests">0</span>
+        </div>
+        <div class="ctab" onclick="switchTab('active')" id="tab-active">
+          Active <span class="ctab-count" id="count-active">0</span>
+        </div>
+        <div class="ctab" onclick="switchTab('completed')" id="tab-completed">
+          Completed <span class="ctab-count" id="count-completed">0</span>
+        </div>
+        <div class="ctab" onclick="switchTab('all')" id="tab-all">
+          All
+        </div>
+      </div>
+      <div class="tab-panel active" id="panel-requests"><div class="loading"><div class="spinner"></div><br/>Loading…</div></div>
+      <div class="tab-panel" id="panel-active"><div class="loading"><div class="spinner"></div><br/>Loading…</div></div>
+      <div class="tab-panel" id="panel-completed"><div class="loading"><div class="spinner"></div><br/>Loading…</div></div>
+      <div class="tab-panel" id="panel-all"><div class="loading"><div class="spinner"></div><br/>Loading…</div></div>
+    </div>
+
+    <!-- CLIENT VIEW TABS -->
+    <div id="client-view" style="display:none">
+      <div class="commission-tabs">
+        <div class="ctab active" onclick="switchClientTab('sent')" id="ctab-sent">
+          Sent Requests <span class="ctab-count" id="ccount-sent">0</span>
+        </div>
+        <div class="ctab" onclick="switchClientTab('inprogress')" id="ctab-inprogress">
+          In Progress <span class="ctab-count" id="ccount-inprogress">0</span>
+        </div>
+        <div class="ctab" onclick="switchClientTab('done')" id="ctab-done">
+          Completed <span class="ctab-count" id="ccount-done">0</span>
+        </div>
+      </div>
+      <div class="tab-panel active" id="cpanel-sent"><div class="loading"><div class="spinner"></div><br/>Loading…</div></div>
+      <div class="tab-panel" id="cpanel-inprogress"><div class="loading"><div class="spinner"></div><br/>Loading…</div></div>
+      <div class="tab-panel" id="cpanel-done"><div class="loading"><div class="spinner"></div><br/>Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: COMMISSION DETAIL -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" onclick="closeModal('detail')">×</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- MODAL: UPDATE STATUS -->
+<div class="modal-overlay" id="modal-status">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('status')">×</button>
+    <h3 id="status-modal-title">Update Status</h3>
+    <div class="modal-sub" id="status-modal-sub"></div>
+    <div id="status-alert"></div>
+    <div class="form-group">
+      <label>Message to client (optional)</label>
+      <textarea id="status-message" placeholder="Add a note for the client…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('status')">Cancel</button>
+      <button class="btn-modal-primary" id="status-confirm-btn" onclick="confirmStatusUpdate()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: GENERATE INVOICE -->
+<div class="modal-overlay" id="modal-invoice">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('invoice')">×</button>
+    <h3>Generate Invoice</h3>
+    <div class="modal-sub" id="invoice-modal-sub"></div>
+    <div id="invoice-alert"></div>
+    <div class="invoice-preview" id="invoice-preview"></div>
+    <div class="form-group">
+      <label>Due Date</label>
+      <input type="date" id="invoice-due" />
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <input type="text" id="invoice-notes" placeholder="e.g. Payment via PayPal preferred" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('invoice')">Cancel</button>
+      <button class="btn-modal-primary" id="invoice-confirm-btn" onclick="confirmInvoice()">Create Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LEAVE REVIEW -->
+<div class="modal-overlay" id="modal-review">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('review')">×</button>
+    <h3>Leave a Review</h3>
+    <div class="modal-sub" id="review-modal-sub"></div>
+    <div id="review-alert"></div>
+    <div class="form-group">
+      <label>Rating</label>
+      <div id="star-picker" style="display:flex;gap:0.5rem;font-size:1.75rem;cursor:pointer;margin-top:0.25rem">
+        <span onclick="setRating(1)">☆</span>
+        <span onclick="setRating(2)">☆</span>
+        <span onclick="setRating(3)">☆</span>
+        <span onclick="setRating(4)">☆</span>
+        <span onclick="setRating(5)">☆</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Your Review</label>
+      <textarea id="review-body" placeholder="Share your experience working with this artist…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('review')">Cancel</button>
+      <button class="btn-modal-primary" id="review-confirm-btn" onclick="confirmReview()">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // State
+  let currentUser = null;
+  let currentProfile = null;
+  let allCommissions = [];
+  let activeCommissionId = null;
+  let pendingStatus = null;
+  let selectedRating = 0;
+
+  const COLORS = ['#019587','#2980b9','#8e44ad','#4a7c59','#c0392b','#e91e63','#A6BC09'];
+  const STATUS_ORDER = ['pending','accepted','in_progress','in_review','revision','delivered','paid','cancelled'];
+  const STATUS_LABELS = { pending:'Pending', accepted:'Accepted', in_progress:'In Progress', in_review:'In Review', revision:'Revision', delivered:'Delivered', paid:'Paid ✓', cancelled:'Cancelled' };
+  const STATUS_PILLS = { pending:'pill-pending', accepted:'pill-accepted', in_progress:'pill-inprogress', in_review:'pill-inreview', revision:'pill-revision', delivered:'pill-delivered', paid:'pill-paid', cancelled:'pill-cancelled' };
+
+  function getInitial(name) { return (name||'?')[0].toUpperCase(); }
+  function getColor(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%COLORS.length; return COLORS[h]; }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  function isOverdue(d) { return d && new Date(d) < new Date(); }
+
+  // ── INIT ───────────────────────────────────────
+  async function init() {
+    const session = await initNav();
+    if (!session) { document.getElementById('auth-wall').style.display = 'block'; return; }
+    currentUser = window.AF.user;
+    currentProfile = window.AF.profile;
+
+    document.getElementById('main-content').style.display = 'block';
+
+    if (currentProfile?.is_artist) {
+      document.getElementById('artist-view').style.display = 'block';
+      document.getElementById('page-sub').textContent = 'Manage commission requests from clients';
+      await loadArtistCommissions();
+    } else {
+      document.getElementById('client-view').style.display = 'block';
+      document.getElementById('page-sub').textContent = 'Track your commission requests';
+      await loadClientCommissions();
+    }
+  }
+
+  // ── LOAD ARTIST COMMISSIONS ────────────────────
+  async function loadArtistCommissions() {
+    const { data } = await window.AF.db.from('commissions')
+      .select('*, profiles!commissions_client_id_fkey(display_name, username, avatar_url)')
+      .eq('artist_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    allCommissions = data || [];
+
+    const requests   = allCommissions.filter(c => c.status === 'pending');
+    const active     = allCommissions.filter(c => ['accepted','in_progress','in_review','revision'].includes(c.status));
+    const completed  = allCommissions.filter(c => ['delivered','paid','cancelled'].includes(c.status));
+
+    document.getElementById('count-requests').textContent = requests.length;
+    document.getElementById('count-active').textContent = active.length;
+    document.getElementById('count-completed').textContent = completed.length;
+
+    renderArtistList('panel-requests', requests, 'artist');
+    renderArtistList('panel-active', active, 'artist');
+    renderArtistList('panel-completed', completed, 'artist');
+    renderArtistList('panel-all', allCommissions, 'artist');
+  }
+
+  // ── LOAD CLIENT COMMISSIONS ────────────────────
+  async function loadClientCommissions() {
+    const { data } = await window.AF.db.from('commissions')
+      .select('*, profiles!commissions_artist_id_fkey(display_name, username, avatar_url)')
+      .eq('client_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    allCommissions = data || [];
+
+    const sent       = allCommissions.filter(c => c.status === 'pending');
+    const inprogress = allCommissions.filter(c => ['accepted','in_progress','in_review','revision'].includes(c.status));
+    const done       = allCommissions.filter(c => ['delivered','paid','cancelled'].includes(c.status));
+
+    document.getElementById('ccount-sent').textContent = sent.length;
+    document.getElementById('ccount-inprogress').textContent = inprogress.length;
+    document.getElementById('ccount-done').textContent = done.length;
+
+    renderClientList('cpanel-sent', sent);
+    renderClientList('cpanel-inprogress', inprogress);
+    renderClientList('cpanel-done', done);
+  }
+
+  // ── RENDER ARTIST LIST ─────────────────────────
+  function renderArtistList(panelId, commissions, role) {
+    const panel = document.getElementById(panelId);
+    if (!commissions.length) {
+      panel.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><h3>Nothing here yet</h3><p>Commissions will appear here once clients start requesting.</p></div>`;
+      return;
+    }
+    panel.innerHTML = `<div class="commission-list">${commissions.map(c => artistCardHTML(c)).join('')}</div>`;
+  }
+
+  function artistCardHTML(c) {
+    const client = c.profiles;
+    const name = client?.display_name || client?.username || 'Client';
+    const color = getColor(name);
+    const due = c.due_date;
+    const overdue = isOverdue(due) && !['delivered','paid','cancelled'].includes(c.status);
+    const isNew = c.status === 'pending';
+
+    const actions = getArtistActions(c);
+
+    return `
+      <div class="commission-card ${isNew ? 'new' : ''} ${overdue ? 'urgent' : ''}" onclick="openDetail('${c.id}')">
+        <div>
+          <div class="cc-top">
+            <div class="cc-avatar" style="background:${color}">${getInitial(name)}</div>
+            <div>
+              <div class="cc-name">${name}</div>
+              <div class="cc-type">${c.commission_type || c.title || 'Commission'}</div>
+            </div>
+          </div>
+          <div class="cc-desc">${c.description ? c.description.substring(0, 140) + (c.description.length > 140 ? '…' : '') : 'No description provided.'}</div>
+          <div class="cc-meta">
+            ${c.amount ? `<div class="cc-meta-item">💰 <strong>$${c.amount}</strong></div>` : ''}
+            <div class="cc-meta-item">📅 Due: <strong class="${overdue ? 'overdue' : ''}">${formatDate(due)}</strong></div>
+            <div class="cc-meta-item">📨 Received: <strong>${formatDate(c.created_at)}</strong></div>
+          </div>
+        </div>
+        <div class="cc-right">
+          <span class="status-pill ${STATUS_PILLS[c.status] || ''}">${STATUS_LABELS[c.status] || c.status}</span>
+          ${c.amount ? `<div class="cc-amount">$${c.amount}</div>` : ''}
+          <div class="cc-actions" onclick="event.stopPropagation()">${actions}</div>
+        </div>
+      </div>`;
+  }
+
+  function getArtistActions(c) {
+    const id = c.id;
+    switch(c.status) {
+      case 'pending':
+        return `<button class="btn-sm btn-accept" onclick="updateStatus('${id}','accepted','Accept Commission','Accept this commission request?')">Accept</button>
+                <button class="btn-sm btn-decline" onclick="updateStatus('${id}','cancelled','Decline Request','Decline this commission request?')">Decline</button>`;
+      case 'accepted':
+        return `<button class="btn-sm btn-progress" onclick="updateStatus('${id}','in_progress','Start Work','Mark this commission as in progress?')">Start Work</button>`;
+      case 'in_progress':
+        return `<button class="btn-sm btn-deliver" onclick="updateStatus('${id}','in_review','Submit for Review','Submit your work for the client to review?')">Submit for Review</button>`;
+      case 'in_review':
+        return `<button class="btn-sm btn-invoice" onclick="openInvoiceModal('${id}')">Generate Invoice</button>
+                <button class="btn-sm btn-progress" onclick="updateStatus('${id}','delivered','Mark Delivered','Mark this commission as delivered?')">Mark Delivered</button>`;
+      case 'revision':
+        return `<button class="btn-sm btn-progress" onclick="updateStatus('${id}','in_progress','Back to Work','Resume work on this commission?')">Resume Work</button>`;
+      case 'delivered':
+        return `<button class="btn-sm btn-invoice" onclick="openInvoiceModal('${id}')">Generate Invoice</button>`;
+      case 'paid':
+        return `<button class="btn-sm btn-view" onclick="openDetail('${id}')">View</button>`;
+      default:
+        return `<button class="btn-sm btn-view" onclick="openDetail('${id}')">View</button>`;
+    }
+  }
+
+  // ── RENDER CLIENT LIST ─────────────────────────
+  function renderClientList(panelId, commissions) {
+    const panel = document.getElementById(panelId);
+    if (!commissions.length) {
+      panel.innerHTML = `<div class="empty-state"><div class="empty-icon">🎨</div><h3>No commissions here</h3><p>Browse artists and request a commission to get started.</p></div>`;
+      return;
+    }
+    panel.innerHTML = `<div class="commission-list">${commissions.map(c => clientCardHTML(c)).join('')}</div>`;
+  }
+
+  function clientCardHTML(c) {
+    const artist = c.profiles;
+    const name = artist?.display_name || artist?.username || 'Artist';
+    const color = getColor(name);
+    const due = c.due_date;
+    const overdue = isOverdue(due) && !['delivered','paid','cancelled'].includes(c.status);
+    const canReview = c.status === 'delivered' || c.status === 'paid';
+
+    return `
+      <div class="commission-card ${overdue ? 'urgent' : ''}" onclick="openDetail('${c.id}')">
+        <div>
+          <div class="cc-top">
+            <div class="cc-avatar" style="background:${color}">${getInitial(name)}</div>
+            <div>
+              <div class="cc-name">${name}</div>
+              <div class="cc-type">${c.commission_type || c.title || 'Commission'}</div>
+            </div>
+          </div>
+          <div class="cc-desc">${c.description ? c.description.substring(0,140) + (c.description.length > 140 ? '…' : '') : ''}</div>
+          <div class="cc-meta">
+            ${c.amount ? `<div class="cc-meta-item">💰 <strong>$${c.amount}</strong></div>` : ''}
+            <div class="cc-meta-item">📅 Due: <strong>${formatDate(due)}</strong></div>
+            <div class="cc-meta-item">📨 Sent: <strong>${formatDate(c.created_at)}</strong></div>
+          </div>
+        </div>
+        <div class="cc-right">
+          <span class="status-pill ${STATUS_PILLS[c.status] || ''}">${STATUS_LABELS[c.status] || c.status}</span>
+          ${c.amount ? `<div class="cc-amount">$${c.amount}</div>` : ''}
+          <div class="cc-actions" onclick="event.stopPropagation()">
+            ${canReview ? `<button class="btn-sm btn-progress" onclick="openReviewModal('${c.id}')">Leave Review</button>` : ''}
+            ${c.status === 'in_review' ? `<button class="btn-sm btn-accept" onclick="updateStatus('${c.id}','delivered','Approve Delivery','Approve this delivery and mark as complete?')">Approve</button>
+            <button class="btn-sm btn-decline" onclick="updateStatus('${c.id}','revision','Request Revision','Request a revision from the artist?')">Request Revision</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── TABS ───────────────────────────────────────
+  function switchTab(name) {
+    ['requests','active','completed','all'].forEach(t => {
+      document.getElementById('tab-' + t)?.classList.toggle('active', t === name);
+      document.getElementById('panel-' + t)?.classList.toggle('active', t === name);
+    });
+  }
+  function switchClientTab(name) {
+    ['sent','inprogress','done'].forEach(t => {
+      document.getElementById('ctab-' + t)?.classList.toggle('active', t === name);
+      document.getElementById('cpanel-' + t)?.classList.toggle('active', t === name);
+    });
+  }
+
+  // ── DETAIL MODAL ───────────────────────────────
+  function openDetail(id) {
+    const c = allCommissions.find(x => x.id === id);
+    if (!c) return;
+    const other = c.profiles;
+    const otherName = other?.display_name || other?.username || 'Unknown';
+    const isArtist = currentProfile?.is_artist;
+    const currentIdx = STATUS_ORDER.indexOf(c.status);
+
+    document.getElementById('detail-content').innerHTML = `
+      <h3>${c.commission_type || c.title || 'Commission'}</h3>
+      <div class="modal-sub" style="margin-bottom:1rem">
+        ${isArtist ? 'From client: ' : 'Artist: '}<strong>${otherName}</strong>
+        &nbsp;·&nbsp; <span class="status-pill ${STATUS_PILLS[c.status] || ''}">${STATUS_LABELS[c.status]}</span>
+      </div>
+
+      <div class="detail-section">
+        <h4>Details</h4>
+        <div class="detail-row"><span>Type</span><strong>${c.commission_type || '—'}</strong></div>
+        <div class="detail-row"><span>Amount</span><strong>${c.amount ? '$' + c.amount : 'Not set'}</strong></div>
+        <div class="detail-row"><span>Due date</span><strong>${formatDate(c.due_date)}</strong></div>
+        <div class="detail-row"><span>Requested</span><strong>${formatDate(c.created_at)}</strong></div>
+        <div class="detail-row"><span>Revisions</span><strong>${c.revision_count || 0} / ${c.max_revisions || 2}</strong></div>
+      </div>
+
+      <div class="detail-section">
+        <h4>Description</h4>
+        <div class="detail-desc">${c.description || 'No description provided.'}</div>
+      </div>
+
+      <div class="detail-section">
+        <h4>Progress</h4>
+        <div class="status-timeline">
+          ${STATUS_ORDER.filter(s => s !== 'cancelled').map(s => {
+            const idx = STATUS_ORDER.indexOf(s);
+            const done = idx < currentIdx;
+            const current = idx === currentIdx;
+            return `<div class="timeline-item">
+              <div class="timeline-dot ${done ? 'done' : current ? 'current' : 'pending'}"></div>
+              <span style="color:${current ? 'var(--accent)' : done ? 'var(--ink)' : 'var(--muted)'};font-weight:${current ? '600' : '400'}">${STATUS_LABELS[s]}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+    openModal('detail');
+  }
+
+  // ── STATUS UPDATE ──────────────────────────────
+  function updateStatus(id, newStatus, title, subtitle) {
+    activeCommissionId = id;
+    pendingStatus = newStatus;
+    document.getElementById('status-modal-title').textContent = title;
+    document.getElementById('status-modal-sub').textContent = subtitle;
+    document.getElementById('status-message').value = '';
+    document.getElementById('status-alert').innerHTML = '';
+    openModal('status');
+  }
+
+  async function confirmStatusUpdate() {
+    const btn = document.getElementById('status-confirm-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-spinner"></span>Updating…';
+
+    const updates = { status: pendingStatus, updated_at: new Date().toISOString() };
+    if (pendingStatus === 'revision') updates.revision_count = (allCommissions.find(c => c.id === activeCommissionId)?.revision_count || 0) + 1;
+
+    const { error } = await window.AF.db.from('commissions').update(updates).eq('id', activeCommissionId);
+
+    btn.disabled = false; btn.textContent = 'Confirm';
+
+    if (error) {
+      document.getElementById('status-alert').innerHTML = `<div class="alert error">${error.message}</div>`;
+      return;
+    }
+
+    closeModal('status');
+    showToast('Status updated! ✓');
+    if (currentProfile?.is_artist) await loadArtistCommissions();
+    else await loadClientCommissions();
+  }
+
+  // ── INVOICE ────────────────────────────────────
+  function openInvoiceModal(id) {
+    activeCommissionId = id;
+    const c = allCommissions.find(x => x.id === id);
+    const client = c.profiles;
+    const clientName = client?.display_name || client?.username || 'Client';
+    document.getElementById('invoice-modal-sub').textContent = `For: ${clientName} · ${c.commission_type || c.title}`;
+    document.getElementById('invoice-preview').innerHTML = `
+      <div class="invoice-row"><span>${c.commission_type || 'Commission'}</span><span>$${c.amount || 0}</span></div>
+      <div class="invoice-row"><span>Platform fee (0%)</span><span>$0.00</span></div>
+      <div class="invoice-row"><span><strong>Total</strong></span><span><strong>$${c.amount || 0}</strong></span></div>
+    `;
+    document.getElementById('invoice-alert').innerHTML = '';
+    // Set default due date to 7 days from now
+    const due = new Date(); due.setDate(due.getDate() + 7);
+    document.getElementById('invoice-due').value = due.toISOString().split('T')[0];
+    openModal('invoice');
+  }
+
+  async function confirmInvoice() {
+    const btn = document.getElementById('invoice-confirm-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-spinner"></span>Creating…';
+    const c = allCommissions.find(x => x.id === activeCommissionId);
+
+    const { error } = await window.AF.db.from('invoices').insert({
+      commission_id: activeCommissionId,
+      artist_id: currentUser.id,
+      client_id: c.client_id,
+      amount: c.amount || 0,
+      status: 'sent',
+      due_date: document.getElementById('invoice-due').value || null
+    });
+
+    btn.disabled = false; btn.textContent = 'Create Invoice';
+
+    if (error) {
+      document.getElementById('invoice-alert').innerHTML = `<div class="alert error">${error.message}</div>`;
+      return;
+    }
+    closeModal('invoice');
+    showToast('Invoice created and sent! 🧾');
+  }
+
+  // ── REVIEW ─────────────────────────────────────
+  function openReviewModal(id) {
+    activeCommissionId = id;
+    const c = allCommissions.find(x => x.id === id);
+    const artist = c.profiles;
+    document.getElementById('review-modal-sub').textContent = `Review your experience with ${artist?.display_name || artist?.username || 'the artist'}`;
+    document.getElementById('review-body').value = '';
+    document.getElementById('review-alert').innerHTML = '';
+    selectedRating = 0;
+    setRating(0);
+    openModal('review');
+  }
+
+  function setRating(n) {
+    selectedRating = n;
+    const stars = document.querySelectorAll('#star-picker span');
+    stars.forEach((s, i) => { s.textContent = i < n ? '★' : '☆'; s.style.color = i < n ? 'var(--gold)' : 'var(--muted)'; });
+  }
+
+  async function confirmReview() {
+    if (!selectedRating) {
+      document.getElementById('review-alert').innerHTML = `<div class="alert error">Please select a star rating.</div>`;
+      return;
+    }
+    const btn = document.getElementById('review-confirm-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-spinner"></span>Submitting…';
+    const c = allCommissions.find(x => x.id === activeCommissionId);
+
+    const { error } = await window.AF.db.from('reviews').insert({
+      commission_id: activeCommissionId,
+      artist_id: c.artist_id,
+      client_id: currentUser.id,
+      rating: selectedRating,
+      body: document.getElementById('review-body').value.trim()
+    });
+
+    btn.disabled = false; btn.textContent = 'Submit Review';
+
+    if (error) {
+      document.getElementById('review-alert').innerHTML = `<div class="alert error">${error.message.includes('duplicate') ? 'You have already reviewed this commission.' : error.message}</div>`;
+      return;
+    }
+    closeModal('review');
+    showToast('Review submitted! ⭐');
+  }
+
+  // ── MODALS ─────────────────────────────────────
+  function openModal(name) { document.getElementById('modal-' + name).classList.add('open'); }
+  function closeModal(name) { document.getElementById('modal-' + name).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+  });
+
+
+  // ── RLS POLICIES NEEDED ────────────────────────
+  // Run in Supabase SQL editor if you get RLS errors:
+  // create policy "Artists can update own commissions" on commissions for update using (auth.uid() = artist_id);
+  // create policy "Clients can update own commissions" on commissions for update using (auth.uid() = client_id);
+  // create policy "Users can view own commissions" on commissions for select using (auth.uid() = artist_id or auth.uid() = client_id);
+  // create policy "Artists can insert invoices" on invoices for insert with check (auth.uid() = artist_id);
+  // create policy "Users can view own invoices" on invoices for select using (auth.uid() = artist_id or auth.uid() = client_id);
+  // create policy "Clients can insert reviews" on reviews for insert with check (auth.uid() = client_id);
+  // create policy "Reviews are publicly viewable" on reviews for select using (true);
+
+  // init() called after nav.js loads
+</script>
+<script src="artwave-nav.js"></script>
+<script>init();</script>
+</body>
+</html>
