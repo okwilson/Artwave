@@ -310,13 +310,14 @@
 
     // Load pinned portfolio items separately
     const artistIds = data.map(a => a.id);
-    const { data: pinnedItems } = await db
+    const { data: pinnedItems, error: pinError } = await db
       .from('portfolio_items')
       .select('artist_id, media_url, media_type, is_pinned, pin_order')
       .in('artist_id', artistIds)
       .eq('is_pinned', true)
-      .neq('media_type', 'video')
       .order('pin_order', { ascending: true });
+
+    console.log('Pinned items found:', pinnedItems, 'Error:', pinError);
 
     // Attach pinned items to each artist
     allArtists = data.map(a => ({
