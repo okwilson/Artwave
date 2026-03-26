@@ -371,15 +371,19 @@
 
       // Get pinned artwork for banner
       const pinned = (a.portfolio_items || [])
-        .filter(p => p.is_pinned && p.media_url && p.media_type !== 'video')
+        .filter(p => p.is_pinned && p.media_url)
         .sort((a, b) => (a.pin_order || 0) - (b.pin_order || 0));
-      const bannerImage = pinned[0]?.media_url || null;
+      const pinnedItem = pinned[0] || null;
+      const bannerImage = pinnedItem?.media_url || null;
+      const isVideo = pinnedItem?.media_type === 'video';
 
       return `
         <div class="artist-card" onclick="window.location.href='artwave-profile.html?u=${a.username}'">
           <div class="card-banner">
             ${bannerImage
-              ? `<img src="${bannerImage}" style="width:100%;height:100%;object-fit:cover;display:block" alt="${name}"/>`
+              ? isVideo
+                ? `<video src="${bannerImage}" muted loop playsinline autoplay style="width:100%;height:100%;object-fit:cover;display:block"></video>`
+                : `<img src="${bannerImage}" style="width:100%;height:100%;object-fit:cover;display:block" alt="${name}"/>`
               : `<div class="card-banner-placeholder" style="background:${banner}">${emoji}</div>`
             }
             <div class="card-avatar" style="background:${color}">${getInitial(name)}</div>
