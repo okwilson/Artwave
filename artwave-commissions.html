@@ -409,6 +409,7 @@
     currentProfile = window.AF.profile;
 
     document.getElementById('main-content').style.display = 'block';
+    await handlePaymentReturn();
 
     if (currentProfile?.is_artist) {
       document.getElementById('artist-view').style.display = 'block';
@@ -518,15 +519,20 @@
         return `<button class="btn-sm btn-accept" onclick="updateStatus('${id}','accepted','Accept Commission','Accept this commission request?')">Accept</button>
                 <button class="btn-sm btn-decline" onclick="updateStatus('${id}','cancelled','Decline Request','Decline this commission request?')">Decline</button>`;
       case 'accepted':
+        if (!c.deposit_paid) {
+          return `<div style="font-size:0.75rem;color:var(--muted);text-align:center">⏳ Awaiting 50% deposit<br/>from client</div>`;
+        }
         return `<button class="btn-sm btn-progress" onclick="updateStatus('${id}','in_progress','Start Work','Mark this commission as in progress?')">Start Work</button>`;
       case 'in_progress':
         return `<button class="btn-sm btn-deliver" onclick="updateStatus('${id}','in_review','Submit for Review','Submit your work for the client to review?')">Submit for Review</button>`;
       case 'in_review':
-        return `<button class="btn-sm btn-invoice" onclick="openInvoiceModal('${id}')">Generate Invoice</button>
-                <button class="btn-sm btn-progress" onclick="updateStatus('${id}','delivered','Mark Delivered','Mark this commission as delivered?')">Mark Delivered</button>`;
+        return `<button class="btn-sm btn-progress" onclick="updateStatus('${id}','delivered','Mark Delivered','Mark this commission as delivered?')">Mark Delivered</button>`;
       case 'revision':
         return `<button class="btn-sm btn-progress" onclick="updateStatus('${id}','in_progress','Back to Work','Resume work on this commission?')">Resume Work</button>`;
       case 'delivered':
+        if (!c.final_paid) {
+          return `<div style="font-size:0.75rem;color:var(--muted);text-align:center">⏳ Awaiting final 50%<br/>payment from client</div>`;
+        }
         return `<button class="btn-sm btn-invoice" onclick="openInvoiceModal('${id}')">Generate Invoice</button>`;
       case 'paid':
         return `<button class="btn-sm btn-view" onclick="openDetail('${id}')">View</button>`;
@@ -574,23 +580,31 @@
           <span class="status-pill ${STATUS_PILLS[c.status] || ''}">${STATUS_LABELS[c.status] || c.status}</span>
           ${c.amount ? `<div class="cc-amount">$${c.amount}</div>` : ''}
           <div class="cc-actions" onclick="event.stopPropagation()">
-            ${c.amount && c.status === 'delivered' && !c.paid_at ? `<button class="btn-sm btn-accept" onclick="payCommission('${c.id}', ${c.amount}, '${c.commission_type||c.title||'Commission'}', '${c.artist_id}')">💳 Pay Now</button>` : ''}
-            ${canReview ? `<button class="btn-sm btn-progress" onclick="openReviewModal('${c.id}')">Leave Review</button>` : ''}
-            ${c.status === 'in_review' ? `<button class="btn-sm btn-accept" onclick="updateStatus('${c.id}','delivered','Approve Delivery','Approve this delivery and mark as complete?')">Approve</button>
-            <button class="btn-sm btn-decline" onclick="updateStatus('${c.id}','revision','Request Revision','Request a revision from the artist?')">Request Revision</button>` : ''}
+            ${c.status === 'accepted' && !c.deposit_paid && c.amount
+              ? `<button class="btn-sm btn-accept" onclick="payCommission('${c.id}', ${c.amount}, '${(c.commission_type||c.title||'Commission').replace(/'/g,"\\'")}', '${c.artist_id}', 'deposit')">💳 Pay 50% Deposit</button>`
+              : ''}
+            ${c.status === 'delivered' && c.deposit_paid && !c.final_paid && c.amount
+              ? `<button class="btn-sm btn-accept" onclick="payCommission('${c.id}', ${c.amount}, '${(c.commission_type||c.title||'Commission').replace(/'/g,"\\'")}', '${c.artist_id}', 'final')">💳 Pay Final 50%</button>`
+              : ''}
+            ${c.status === 'in_review'
+              ? `<button class="btn-sm btn-accept" onclick="updateStatus('${c.id}','delivered','Approve Delivery','Approve this delivery?')">Approve</button>
+                 <button class="btn-sm btn-decline" onclick="updateStatus('${c.id}','revision','Request Revision','Request a revision?')">Request Revision</button>`
+              : ''}
+            ${(c.status === 'delivered' && c.final_paid) || c.status === 'paid'
+              ? `<button class="btn-sm btn-progress" onclick="openReviewModal('${c.id}')">Leave Review</button>`
+              : ''}
           </div>
         </div>
       </div>`;
   }
 
   // ── PAY COMMISSION ─────────────────────────────
-  async function payCommission(commissionId, amount, title, artistId) {
+  async function payCommission(commissionId, amount, title, artistId, paymentType) {
     showToast('Opening payment…');
     try {
-      // Get artist's stripe account id
       const { data: artist } = await window.AF.db
         .from('profiles')
-        .select('stripe_account_id, display_name, username')
+        .select('display_name, username')
         .eq('id', artistId)
         .single();
 
@@ -600,10 +614,10 @@
         body: JSON.stringify({
           amount: parseFloat(amount),
           commissionId,
-          artistStripeId: artist?.stripe_account_id || null,
           artistName: artist?.display_name || artist?.username || 'Artist',
           commissionTitle: title,
-          clientEmail: currentUser.email
+          clientEmail: currentUser.email,
+          paymentType: paymentType || 'deposit'
         })
       });
       const data = await res.json();
@@ -614,6 +628,28 @@
       }
     } catch (err) {
       showToast('Payment failed: ' + err.message);
+    }
+  }
+
+  // ── HANDLE PAYMENT RETURN ──────────────────────
+  async function handlePaymentReturn() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      const commissionId = params.get('commission');
+      const type = params.get('type');
+      if (commissionId && type) {
+        const updates = type === 'deposit'
+          ? { deposit_paid: true, status: 'accepted' }
+          : { final_paid: true, status: 'paid' };
+        await window.AF.db.from('commissions').update(updates).eq('id', commissionId);
+        showToast(type === 'deposit' ? '✅ Deposit paid! Artist can now begin work.' : '✅ Final payment made! Commission complete.');
+      }
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    if (params.get('payment') === 'cancelled') {
+      showToast('Payment cancelled.');
+      window.history.replaceState({}, '', window.location.pathname);
     }
   }
 
