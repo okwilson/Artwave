@@ -755,6 +755,8 @@
       .from('portfolio_items')
       .select('*')
       .eq('artist_id', artistId)
+      .order('is_pinned', { ascending: false })
+      .order('pin_order', { ascending: true })
       .order('created_at', { ascending: false });
 
     const grid = document.getElementById('portfolio-grid');
@@ -764,9 +766,11 @@
       return;
     }
 
+    const pinnedCount = data.filter(i => i.is_pinned).length;
     const PLACEHOLDERS = ['🦊','🧚','🐉','🌸','🔮','🌿','🦋','🎭','🌙','⚡'];
     grid.innerHTML = data.map((item, i) => {
       const isHidden = item.ai_flagged && item.flag_count >= 3;
+      const isPinned = item.is_pinned;
       return `
       <div class="portfolio-item" style="${isHidden ? 'opacity:0.4;filter:blur(4px)' : ''}">
         <div onclick="openLightbox('${item.media_url}', '${(item.title||'').replace(/'/g,"\\'")}', '${item.media_type||'image'}')">
@@ -781,26 +785,52 @@
             ${item.description ? `<div style="font-size:0.78rem;margin-top:0.25rem;opacity:0.85">${item.description}</div>` : ''}
           </div>
         </div>
+        ${isPinned ? `<div style="position:absolute;top:6px;left:6px;background:var(--gold);color:var(--ink);font-size:0.65rem;font-weight:800;padding:0.2rem 0.45rem;border-radius:2px;border:1.5px solid var(--ink)">📌 Pinned</div>` : ''}
         ${isHidden ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(184,64,64,0.15);font-size:0.75rem;font-weight:700;color:#b84040;text-align:center;padding:0.5rem">⚠️ Hidden — flagged for review</div>` : ''}
+        ${isOwnProfile ? `
+          <button onclick="togglePin('${item.id}', ${isPinned}, ${pinnedCount})" class="pin-btn" style="position:absolute;bottom:6px;left:6px;background:${isPinned ? 'var(--gold)' : 'rgba(0,0,0,0.6)'};color:${isPinned ? 'var(--ink)' : 'white'};border:none;border-radius:3px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;opacity:0;transition:opacity 0.2s;font-weight:700">
+            ${isPinned ? '📌 Unpin' : '📌 Pin'}
+          </button>` : ''}
         ${!isOwnProfile && currentUser ? `
           <button onclick="flagItem('${item.id}', this)" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:3px;padding:0.2rem 0.4rem;font-size:0.68rem;cursor:pointer;opacity:0;transition:opacity 0.2s" class="flag-btn">
             🚩 ${item.flag_count > 0 ? item.flag_count : ''}
           </button>` : ''}
-        ${item.ai_flagged ? `<div style="position:absolute;top:6px;left:6px;background:#b84040;color:white;font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:2px">⚠️ Under review</div>` : ''}
+        ${item.ai_flagged ? `<div style="position:absolute;top:6px;${isPinned ? 'left:70px' : 'left:6px'};background:#b84040;color:white;font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:2px">⚠️ Under review</div>` : ''}
       </div>`;
     }).join('');
 
-    // Show flag buttons on hover
+    // Show action buttons on hover
     grid.querySelectorAll('.portfolio-item').forEach(item => {
       item.addEventListener('mouseenter', () => {
-        const btn = item.querySelector('.flag-btn');
-        if (btn) btn.style.opacity = '1';
+        const flagBtn = item.querySelector('.flag-btn');
+        const pinBtn = item.querySelector('.pin-btn');
+        if (flagBtn) flagBtn.style.opacity = '1';
+        if (pinBtn) pinBtn.style.opacity = '1';
       });
       item.addEventListener('mouseleave', () => {
-        const btn = item.querySelector('.flag-btn');
-        if (btn) btn.style.opacity = '0';
+        const flagBtn = item.querySelector('.flag-btn');
+        const pinBtn = item.querySelector('.pin-btn');
+        if (flagBtn) flagBtn.style.opacity = '0';
+        if (pinBtn) pinBtn.style.opacity = '0';
       });
     });
+  }
+
+  // ── TOGGLE PIN ─────────────────────────────────
+  async function togglePin(itemId, isPinned, pinnedCount) {
+    if (!isPinned && pinnedCount >= 3) {
+      showToast('You can only pin up to 3 items — unpin one first!');
+      return;
+    }
+    const newPinned = !isPinned;
+    const { error } = await window.AF.db.from('portfolio_items').update({
+      is_pinned: newPinned,
+      pin_order: newPinned ? pinnedCount + 1 : 0
+    }).eq('id', itemId);
+
+    if (error) { showToast('Could not update pin: ' + error.message); return; }
+    showToast(newPinned ? '📌 Pinned to your profile!' : 'Unpinned');
+    await loadPortfolio(currentUser.id);
   }
 
   // ── LOAD REVIEWS ───────────────────────────────

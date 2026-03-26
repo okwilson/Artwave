@@ -293,7 +293,12 @@
   async function loadArtists() {
     const { data, error } = await db
       .from('profiles')
-      .select('*, profile_tags(tag_id, tags(name)), reviews!reviews_artist_id_fkey(rating)')
+      .select(`
+        *,
+        profile_tags(tag_id, tags(name)),
+        reviews!reviews_artist_id_fkey(rating),
+        portfolio_items(media_url, media_type, is_pinned, pin_order)
+      `)
       .eq('is_artist', true)
       .order('created_at', { ascending: false });
 
@@ -346,10 +351,20 @@
       const tags = (a.profile_tags || []).map(pt => pt.tags?.name).filter(Boolean);
       const ratings = (a.reviews || []).map(r => r.rating).filter(Boolean);
       const avgRating = ratings.length ? (ratings.reduce((s,r)=>s+r,0)/ratings.length).toFixed(1) : null;
+
+      // Get pinned artwork for banner
+      const pinned = (a.portfolio_items || [])
+        .filter(p => p.is_pinned && p.media_url && p.media_type !== 'video')
+        .sort((a, b) => (a.pin_order || 0) - (b.pin_order || 0));
+      const bannerImage = pinned[0]?.media_url || null;
+
       return `
         <div class="artist-card" onclick="window.location.href='artwave-profile.html?u=${a.username}'">
           <div class="card-banner">
-            <div class="card-banner-placeholder" style="background:${banner}">${emoji}</div>
+            ${bannerImage
+              ? `<img src="${bannerImage}" style="width:100%;height:100%;object-fit:cover;display:block" alt="${name}"/>`
+              : `<div class="card-banner-placeholder" style="background:${banner}">${emoji}</div>`
+            }
             <div class="card-avatar" style="background:${color}">${getInitial(name)}</div>
             <span class="${a.commissions_open ? 'open-badge' : 'closed-badge'}">${a.commissions_open ? '● Open' : '● Closed'}</span>
           </div>
