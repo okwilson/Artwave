@@ -574,12 +574,47 @@
           <span class="status-pill ${STATUS_PILLS[c.status] || ''}">${STATUS_LABELS[c.status] || c.status}</span>
           ${c.amount ? `<div class="cc-amount">$${c.amount}</div>` : ''}
           <div class="cc-actions" onclick="event.stopPropagation()">
+            ${c.amount && c.status === 'delivered' && !c.paid_at ? `<button class="btn-sm btn-accept" onclick="payCommission('${c.id}', ${c.amount}, '${c.commission_type||c.title||'Commission'}', '${c.artist_id}')">💳 Pay Now</button>` : ''}
             ${canReview ? `<button class="btn-sm btn-progress" onclick="openReviewModal('${c.id}')">Leave Review</button>` : ''}
             ${c.status === 'in_review' ? `<button class="btn-sm btn-accept" onclick="updateStatus('${c.id}','delivered','Approve Delivery','Approve this delivery and mark as complete?')">Approve</button>
             <button class="btn-sm btn-decline" onclick="updateStatus('${c.id}','revision','Request Revision','Request a revision from the artist?')">Request Revision</button>` : ''}
           </div>
         </div>
       </div>`;
+  }
+
+  // ── PAY COMMISSION ─────────────────────────────
+  async function payCommission(commissionId, amount, title, artistId) {
+    showToast('Opening payment…');
+    try {
+      // Get artist's stripe account id
+      const { data: artist } = await window.AF.db
+        .from('profiles')
+        .select('stripe_account_id, display_name, username')
+        .eq('id', artistId)
+        .single();
+
+      const res = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(amount),
+          commissionId,
+          artistStripeId: artist?.stripe_account_id || null,
+          artistName: artist?.display_name || artist?.username || 'Artist',
+          commissionTitle: title,
+          clientEmail: currentUser.email
+        })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        showToast('Payment error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      showToast('Payment failed: ' + err.message);
+    }
   }
 
   // ── TABS ───────────────────────────────────────
