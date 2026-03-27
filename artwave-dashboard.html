@@ -181,25 +181,7 @@
   .alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--green); }
   .alert.error { background: #fdf0f0; border: 1px solid #f5c6c6; color: var(--red); }
 
-  @media (max-width: 768px) {
-    .dashboard { grid-template-columns: 1fr; }
-    .sidebar { display: none !important; }
-    .dash-main { padding: 1rem; padding-bottom: 5rem; }
-    .stats-row { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-    .stat-card { padding: 0.9rem; }
-    .stat-card-num { font-size: 1.5rem; }
-    .dash-cols { grid-template-columns: 1fr; gap: 1rem; }
-    .settings-grid { grid-template-columns: 1fr; }
-    .greeting h2 { font-size: 1.3rem; }
-    .table-card-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-    th { padding: 0.5rem 0.75rem; }
-    td { padding: 0.6rem 0.75rem; font-size: 0.8rem; }
-    /* Hide less important table columns on mobile */
-    th:nth-child(3), td:nth-child(3) { display: none; }
-    .mobile-nav { display: flex; }
-  }
-  @media (min-width: 769px) {
-    .mobile-nav { display: none !important; }
+
   }
 
   /* ── SHARED NAV ── */
@@ -222,6 +204,37 @@
   nav#artwave-nav .nav-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: white; }
   nav#artwave-nav .btn-primary { background: var(--accent); color: white; border: none; padding: 0.45rem 1.2rem; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; }
   nav#artwave-nav .btn-primary:hover { background: #017a6e; }
+
+
+  @media (max-width: 768px) {
+    .dashboard {
+      display: block !important;
+      padding-top: 58px;
+    }
+    .sidebar {
+      display: none !important;
+    }
+    .dash-main {
+      display: block !important;
+      padding: 1rem;
+      padding-bottom: 5rem;
+      min-height: calc(100vh - 58px);
+    }
+    .stats-row { grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
+    .stat-card { padding: 0.85rem; }
+    .stat-card-num { font-size: 1.5rem; }
+    .stat-card-sub { font-size: 0.7rem; }
+    .dash-cols { grid-template-columns: 1fr; gap: 1rem; }
+    .settings-grid { grid-template-columns: 1fr; }
+    .greeting { margin-bottom: 1.25rem; }
+    .greeting h2 { font-size: 1.3rem; }
+    .table-card-header { flex-wrap: wrap; gap: 0.5rem; }
+    th:nth-child(3), td:nth-child(3) { display: none; }
+    th { padding: 0.5rem 0.75rem; font-size: 0.65rem; }
+    td { padding: 0.6rem 0.75rem; font-size: 0.8rem; }
+    .mobile-nav { display: flex !important; }
+    .side-card { padding: 1rem; }
+  }
 
 </style>
 </head>

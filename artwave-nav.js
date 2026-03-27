@@ -158,6 +158,53 @@ async function initNav() {
         </div>
         <button class="nav-logout" onclick="signOut()">Log out</button>
       </div>`;
+
+    // Inject mobile bottom nav into every page
+    if (!document.getElementById('af-mobile-nav')) {
+      const mobileNav = document.createElement('div');
+      mobileNav.id = 'af-mobile-nav';
+      mobileNav.innerHTML = `
+        <button class="af-mn-btn ${active==='discover'?'af-active':''}" onclick="goTo('discover')">
+          <span>🔍</span>Discover
+        </button>
+        <button class="af-mn-btn ${active==='profile'?'af-active':''}" onclick="goToProfile()">
+          <span>👤</span>Profile
+        </button>
+        <button class="af-mn-btn ${active==='messages'?'af-active':''}" onclick="goTo('messages')">
+          <span>💬</span>Messages
+        </button>
+        <button class="af-mn-btn ${active==='dashboard'?'af-active':''}" onclick="goTo('dashboard')">
+          <span>📊</span>Dashboard
+        </button>`;
+      document.body.appendChild(mobileNav);
+
+      // Add mobile nav styles
+      const mobileStyle = document.createElement('style');
+      mobileStyle.textContent = `
+        #af-mobile-nav {
+          display: none;
+          position: fixed; bottom: 0; left: 0; right: 0;
+          background: #01415B; border-top: 2px solid #A6BC09;
+          z-index: 9999; padding: 0.3rem 0;
+          box-shadow: 0 -4px 12px rgba(0,0,0,0.2);
+        }
+        .af-mn-btn {
+          flex: 1; display: flex; flex-direction: column; align-items: center;
+          gap: 0.15rem; background: none; border: none; color: #a8c8b8;
+          font-size: 0.58rem; font-weight: 700; cursor: pointer; padding: 0.4rem 0.25rem;
+          font-family: 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: .04em;
+          transition: color 0.15s;
+        }
+        .af-mn-btn span { font-size: 1.3rem; line-height: 1; display: block; }
+        .af-mn-btn.af-active { color: #A6BC09; }
+        .af-mn-btn:hover { color: #f0f7e6; }
+        @media (max-width: 768px) {
+          #af-mobile-nav { display: flex !important; }
+          body { padding-bottom: 60px; }
+        }
+      `;
+      document.head.appendChild(mobileStyle);
+    }
   } else {
     navEl.innerHTML = `
       <div class="nav-logo" onclick="goTo('discover')">Art<span>wave</span></div>
