@@ -673,7 +673,8 @@
         if (!c.final_paid) {
           return `<div style="font-size:0.75rem;color:var(--muted);text-align:center">⏳ Awaiting final 50%<br/>payment from client</div>`;
         }
-        return `<button class="btn-sm btn-invoice" onclick="openInvoiceModal('${id}')">Generate Invoice</button>`;
+        return `<button class="btn-sm btn-invoice" onclick="openInvoiceModal('${id}')">Generate Invoice</button>
+                <button class="btn-sm btn-progress" onclick="updateStatus('${id}','paid','Mark as Paid','Mark this commission as fully paid?')">Mark Paid</button>`;
       case 'paid':
         return `<button class="btn-sm btn-view" onclick="openDetail('${id}')">View</button>`;
       default:
@@ -723,14 +724,14 @@
             ${c.status === 'accepted' && !c.deposit_paid && c.amount
               ? `<button class="btn-sm btn-accept" onclick="payCommission('${c.id}', ${c.amount}, '${(c.commission_type||c.title||'Commission').replace(/'/g,"\\'")}', '${c.artist_id}', 'deposit')">💳 Pay 50% Deposit</button>`
               : ''}
-            ${c.status === 'delivered' && c.deposit_paid && !c.final_paid && c.amount
-              ? `<button class="btn-sm btn-accept" onclick="payCommission('${c.id}', ${c.amount}, '${(c.commission_type||c.title||'Commission').replace(/'/g,"\\'")}', '${c.artist_id}', 'final')">💳 Pay Final 50%</button>`
-              : ''}
             ${c.status === 'in_review'
               ? `<button class="btn-sm btn-accept" onclick="updateStatus('${c.id}','delivered','Approve Delivery','Approve this delivery?')">Approve</button>
                  <button class="btn-sm btn-decline" onclick="updateStatus('${c.id}','revision','Request Revision','Request a revision?')">Request Revision</button>`
               : ''}
-            ${(c.status === 'delivered' && c.final_paid) || c.status === 'paid'
+            ${(c.status === 'delivered' || c.status === 'in_review') && c.deposit_paid && !c.final_paid && c.amount
+              ? `<button class="btn-sm btn-accept" onclick="payCommission('${c.id}', ${c.amount}, '${(c.commission_type||c.title||'Commission').replace(/'/g,"\\'")}', '${c.artist_id}', 'final')">💳 Pay Final 50%</button>`
+              : ''}
+            ${c.status === 'paid' || (c.status === 'delivered' && c.final_paid)
               ? `<button class="btn-sm btn-progress" onclick="openReviewModal('${c.id}')">Leave Review</button>`
               : ''}
           </div>
