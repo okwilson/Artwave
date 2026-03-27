@@ -546,9 +546,6 @@
     currentUser = window.AF.user;
     currentProfile = window.AF.profile;
 
-    document.getElementById('main-content').style.display = 'block';
-    await handlePaymentReturn();
-
     if (currentProfile?.is_artist) {
       document.getElementById('artist-view').style.display = 'block';
       document.getElementById('page-sub').textContent = 'Manage commission requests from clients';
@@ -558,6 +555,9 @@
       document.getElementById('page-sub').textContent = 'Track your commission requests';
       await loadClientCommissions();
     }
+
+    // Handle payment return AFTER commissions are loaded
+    await handlePaymentReturn();
   }
 
   // ── LOAD ARTIST COMMISSIONS ────────────────────
@@ -777,13 +777,38 @@
       const type = params.get('type');
       if (commissionId && type) {
         const updates = type === 'deposit'
-          ? { deposit_paid: true, status: 'accepted' }
+          ? { deposit_paid: true }
           : { final_paid: true, status: 'paid' };
-        await window.AF.db.from('commissions').update(updates).eq('id', commissionId);
-        showToast(type === 'deposit' ? '✅ Deposit paid! Artist can now begin work.' : '✅ Final payment made! Commission complete.');
+
+        const { error } = await window.AF.db.from('commissions')
+          .update(updates).eq('id', commissionId);
+
+        if (error) {
+          console.error('Payment update error:', error);
+          showToast('Payment recorded but could not update status: ' + error.message);
+        } else {
+          const msg = type === 'deposit'
+            ? '✅ Deposit paid! The artist can now begin work.'
+            : '✅ Final payment made! Commission complete.';
+          showToast(msg);
+
+          // Notify artist of payment
+          const commission = allCommissions.find(c => c.id === commissionId);
+          if (commission && typeof createNotification === 'function') {
+            const notifyId = commission.artist_id;
+            await createNotification(notifyId, 'payment',
+              type === 'deposit' ? '50% deposit received!' : 'Final payment received!',
+              `Payment confirmed for your commission.`,
+              'artwave-commissions.html');
+          }
+        }
       }
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
+
+      // Reload commissions to reflect new status
+      if (currentProfile?.is_artist) await loadArtistCommissions();
+      else await loadClientCommissions();
     }
     if (params.get('payment') === 'cancelled') {
       showToast('Payment cancelled.');
