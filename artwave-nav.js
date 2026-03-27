@@ -131,7 +131,25 @@ async function initNav() {
   const navEl = document.getElementById('artwave-nav');
   if (!navEl) return;
 
-  const { data: { session } } = await db.auth.getSession();
+  // Try to get session — if expired, refresh it automatically
+  let { data: { session } } = await db.auth.getSession();
+
+  if (!session) {
+    // Try refreshing the session before giving up
+    const { data: refreshed } = await db.auth.refreshSession();
+    session = refreshed?.session || null;
+  }
+
+  // Listen for auth state changes and reload if session restored
+  db.auth.onAuthStateChange((event, newSession) => {
+    if (event === 'SIGNED_IN' && !window.AF.user) {
+      window.location.reload();
+    }
+    if (event === 'SIGNED_OUT') {
+      window.location.href = 'artwave-auth.html';
+    }
+  });
+
   const active = _activePage();
 
   if (session) {
