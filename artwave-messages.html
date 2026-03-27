@@ -11,189 +11,71 @@
     --ink: #01415B; --cream: #e8f4e0; --warm: #c8e0a0;
     --accent: #019587; --accent2: #005148; --gold: #A6BC09;
     --muted: #4a7a6a; --card: #f5fcea; --border: #c8dba0;
-    --green: #005148; --red: #b84040;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); height: 100vh; display: flex; flex-direction: column; }
+  html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
 
-  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #01415B; color: #f0f7e6; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 58px; border-bottom: 3px solid #A6BC09; font-family: 'DM Sans', sans-serif; }
+  nav#artwave-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
 
-  /* LAYOUT */
-  .messages-layout {
+  /* FULL HEIGHT LAYOUT */
+  .page {
+    position: fixed;
+    top: 58px; left: 0; right: 0; bottom: 0;
     display: grid;
-    grid-template-columns: 320px 1fr;
-    height: calc(100vh - 58px);
-    margin-top: 58px;
+    grid-template-columns: 300px 1fr;
   }
 
-  /* THREAD LIST */
+  /* ── THREAD LIST ── */
   .thread-list {
     background: white;
     border-right: 2px solid var(--border);
     display: flex; flex-direction: column;
     overflow: hidden;
   }
-  .thread-list-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 2px solid var(--border);
+  .tl-header {
+    padding: 1rem 1.25rem;
     background: var(--ink); color: var(--cream);
+    border-bottom: 2px solid var(--gold); flex-shrink: 0;
   }
-  .thread-list-header h2 { font-family: 'Playfair Display', serif; font-size: 1.2rem; }
-  .thread-list-header p { font-size: 0.78rem; color: #a8c8b8; margin-top: 0.2rem; }
-  .thread-search {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--card);
+  .tl-header h2 { font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+  .tl-header p { font-size: 0.75rem; color: #a8c8b8; margin-top: 0.1rem; }
+  .tl-search { padding: 0.6rem 1rem; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .tl-search input {
+    width: 100%; padding: 0.45rem 0.75rem; border: 1.5px solid var(--border);
+    border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.83rem;
+    background: white; outline: none; color: var(--ink);
   }
-  .thread-search input {
-    width: 100%; padding: 0.5rem 0.75rem; border: 1.5px solid var(--border);
-    border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
-    background: white; outline: none;
-  }
-  .thread-search input:focus { border-color: var(--accent); }
-  .threads { flex: 1; overflow-y: auto; }
+  .tl-search input:focus { border-color: var(--accent); }
+  .tl-items { flex: 1; overflow-y: auto; }
+
   .thread-item {
-    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
-    cursor: pointer; transition: background 0.15s; display: flex; gap: 0.75rem; align-items: flex-start;
+    padding: 0.85rem 1rem; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.12s;
+    display: flex; gap: 0.65rem; align-items: flex-start;
   }
   .thread-item:hover { background: var(--card); }
-  .thread-item.active { background: #e0f5f3; border-left: 3px solid var(--accent); }
-  .thread-avatar {
-    width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  .thread-item.active { background: #d8f0ec; border-left: 3px solid var(--accent); }
+  .t-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; color: white; font-size: 1rem;
-    border: 2px solid var(--border);
+    font-weight: 700; color: white; font-size: 0.88rem; border: 2px solid var(--border);
   }
-  .thread-info { flex: 1; min-width: 0; }
-  .thread-name { font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .thread-commission { font-size: 0.75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .thread-preview { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; white-rap: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .thread-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; flex-shrink: 0; }
-  .thread-time { font-size: 0.7rem; color: var(--muted); }
-  .unread-badge {
-    background: var(--accent); color: white; font-size: 0.65rem;
-    font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 999px; min-width: 18px; text-align: center;
-  }
-  .threads-empty { padding: 2rem; text-align: center; color: var(--muted); font-size: 0.88rem; }
+  .t-info { flex: 1; min-width: 0; }
+  .t-name { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t-sub { font-size: 0.72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t-preview { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; flex-shrink: 0; }
+  .t-time { font-size: 0.68rem; color: var(--muted); }
+  .unread { background: var(--accent); color: white; font-size: 0.62rem; font-weight: 700; padding: 0.1rem 0.35rem; border-radius: 999px; min-width: 16px; text-align: center; }
+  .tl-empty { padding: 2rem; text-align: center; color: var(--muted); font-size: 0.85rem; }
 
-  /* CHAT AREA */
-  .chat-area {
-    display: flex; flex-direction: column; height: 100%;
-    background: var(--cream);
-  }
-  .chat-header {
-    padding: 1rem 1.5rem; background: white;
-    border-bottom: 2px solid var(--border);
-    display: flex; align-items: center; gap: 1rem;
-  }
-  .chat-header-avatar {
-    width: 40px; height: 40px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; color: white; font-size: 1rem;
-    border: 2px solid var(--border);
-  }
-  .chat-header-info h3 { font-family: 'Playfair Display', serif; font-size: 1rem; }
-  .chat-header-info p { font-size: 0.78rem; color: var(--muted); }
-  .chat-header-actions { margin-left: auto; }
-  .btn-sm-outline {
-    background: transparent; border: 1.5px solid var(--border);
-    color: var(--ink); padding: 0.35rem 0.85rem; border-radius: 6px;
-    font-size: 0.78rem; font-weight: 500; cursor: pointer;
-    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
-  }
-  .btn-sm-outline:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* MESSAGES */
-  .messages-wrap {
-    flex: 1; overflow-y: auto; padding: 1.5rem;
-    display: flex; flex-direction: column; gap: 0.75rem;
-  }
-  .msg-group { display: flex; gap: 0.6rem; align-items: flex-end; }
-  .msg-group.own { flex-direction: row-reverse; }
-  .msg-avatar {
-    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; color: white; font-size: 0.72rem;
-  }
-  .msg-bubble {
-    max-width: 65%; padding: 0.65rem 0.9rem;
-    border-radius: 12px; font-size: 0.88rem; line-height: 1.5;
-    position: relative;
-  }
-  .msg-group:not(.own) .msg-bubble {
-    background: white; border: 1px solid var(--border);
-    border-bottom-left-radius: 3px;
-  }
-  .msg-group.own .msg-bubble {
-    background: var(--accent); color: white;
-    border-bottom-right-radius: 3px;
-  }
-  .msg-time {
-    font-size: 0.65rem; color: var(--muted); margin-top: 0.2rem;
-    text-align: right;
-  }
-  .msg-group.own .msg-time { text-align: left; }
-  .msg-attachment {
-    margin-top: 0.5rem; border-radius: 6px; overflow: hidden;
-    max-width: 200px; border: 1px solid rgba(0,0,0,0.1);
-  }
-  .msg-attachment img { width: 100%; display: block; cursor: pointer; }
-
-  /* DATE DIVIDER */
-  .date-divider {
-    display: flex; align-items: center; gap: 0.75rem;
-    margin: 0.5rem 0; color: var(--muted); font-size: 0.72rem;
-  }
-  .date-divider::before, .date-divider::after {
-    content: ''; flex: 1; height: 1px; background: var(--border);
+  /* ── CHAT PANEL ── */
+  .chat-panel {
+    display: flex; flex-direction: column;
+    overflow: hidden; background: var(--cream);
   }
 
-  /* INPUT */
-  .chat-input-wrap {
-    padding: 1rem 1.5rem; background: white;
-    border-top: 2px solid var(--border);
-  }
-  .chat-input-row { display: flex; gap: 0.75rem; align-items: flex-end; }
-  .chat-input-box { flex: 1; position: relative; }
-  .chat-input {
-    width: 100%; padding: 0.75rem 1rem; padding-right: 3rem;
-    border: 2px solid var(--border); border-radius: 10px;
-    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
-    resize: none; outline: none; min-height: 44px; max-height: 120px;
-    line-height: 1.5; background: var(--card);
-    transition: border 0.15s;
-  }
-  .chat-input:focus { border-color: var(--accent); }
-  .attach-btn {
-    position: absolute; right: 0.6rem; bottom: 0.6rem;
-    background: none; border: none; cursor: pointer; font-size: 1.1rem;
-    color: var(--muted); transition: color 0.15s;
-  }
-  .attach-btn:hover { color: var(--accent); }
-  .attach-input { display: none; }
-  .send-btn {
-    background: var(--accent); color: white; border: none;
-    width: 44px; height: 44px; border-radius: 10px;
-    font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
-    transition: background 0.15s; display: flex; align-items: center; justify-content: center;
-  }
-  .send-btn:hover { background: #017a6e; }
-  .send-btn:disabled { background: var(--muted); cursor: not-allowed; }
-  .attach-preview {
-    display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;
-  }
-  .attach-preview-item {
-    position: relative; width: 60px; height: 60px;
-    border-radius: 6px; overflow: hidden; border: 1px solid var(--border);
-  }
-  .attach-preview-item img { width: 100%; height: 100%; object-fit: cover; }
-  .attach-remove {
-    position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6);
-    color: white; border: none; border-radius: 50%; width: 16px; height: 16px;
-    font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
-
-  /* EMPTY STATES */
+  /* Empty state */
   .chat-empty {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -202,77 +84,163 @@
   .chat-empty-icon { font-size: 3rem; margin-bottom: 1rem; }
   .chat-empty h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--ink); margin-bottom: 0.5rem; }
 
-  /* LOADING */
-  .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  /* Chat header */
+  .chat-header {
+    padding: 0.85rem 1.25rem; background: white;
+    border-bottom: 2px solid var(--border);
+    display: flex; align-items: center; gap: 0.85rem;
+    flex-shrink: 0;
+  }
+  .ch-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: white; font-size: 0.88rem; border: 2px solid var(--border);
+  }
+  .ch-info h3 { font-family: 'Playfair Display', serif; font-size: 0.95rem; }
+  .ch-info p { font-size: 0.72rem; color: var(--muted); }
+  .ch-actions { margin-left: auto; }
+  .btn-sm-link { background: none; border: 1.5px solid var(--border); color: var(--ink); padding: 0.3rem 0.75rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-sm-link:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Messages scroll area */
+  .msgs-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  /* Message bubbles */
+  .msg-row { display: flex; gap: 0.5rem; align-items: flex-end; }
+  .msg-row.own { flex-direction: row-reverse; }
+  .m-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: white; font-size: 0.68rem;
+  }
+  .m-content { max-width: 62%; }
+  .m-bubble {
+    padding: 0.6rem 0.85rem; border-radius: 14px;
+    font-size: 0.87rem; line-height: 1.5; word-break: break-word;
+  }
+  .msg-row:not(.own) .m-bubble { background: white; border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+  .msg-row.own .m-bubble { background: var(--accent); color: white; border-bottom-right-radius: 3px; }
+  .m-time { font-size: 0.62rem; color: var(--muted); margin-top: 0.2rem; }
+  .msg-row.own .m-time { text-align: right; }
+  .m-img { margin-top: 0.4rem; border-radius: 8px; overflow: hidden; max-width: 180px; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; }
+  .m-img img { width: 100%; display: block; }
+
+  /* Date dividers */
+  .date-sep { display: flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 0.7rem; margin: 0.25rem 0; }
+  .date-sep::before, .date-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Input bar — fixed at bottom */
+  .chat-input-bar {
+    background: white;
+    border-top: 2px solid var(--border);
+    padding: 0.85rem 1.25rem;
+    flex-shrink: 0;
+  }
+  .attach-previews { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .ap-item { position: relative; width: 52px; height: 52px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .ap-item img { width: 100%; height: 100%; object-fit: cover; }
+  .ap-remove { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.65); color: white; border: none; border-radius: 50%; width: 15px; height: 15px; font-size: 0.55rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .input-row { display: flex; gap: 0.6rem; align-items: flex-end; }
+  .input-box { flex: 1; position: relative; }
+  .msg-input {
+    width: 100%; padding: 0.65rem 2.75rem 0.65rem 0.9rem;
+    border: 2px solid var(--border); border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+    resize: none; outline: none; min-height: 42px; max-height: 110px;
+    line-height: 1.5; background: var(--card); color: var(--ink);
+    transition: border 0.15s; display: block;
+  }
+  .msg-input:focus { border-color: var(--accent); }
+  .attach-trigger { position: absolute; right: 0.6rem; bottom: 0.55rem; background: none; border: none; cursor: pointer; font-size: 1rem; color: var(--muted); }
+  .attach-trigger:hover { color: var(--accent); }
+  .file-input { display: none; }
+  .send-btn {
+    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+    background: var(--accent); color: white; border: none;
+    font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .send-btn:hover { background: #017a6e; }
+  .send-btn:disabled { background: var(--muted); cursor: not-allowed; }
+
+  /* Loading */
+  .spinner { display: inline-block; width: 22px; height: 22px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* AUTH WALL */
-  .auth-wall { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 2rem; }
+  /* Auth wall */
+  .auth-wall { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; }
   .auth-wall h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 0.75rem; }
   .auth-wall p { color: var(--muted); margin-bottom: 1.5rem; }
   .btn-primary { background: var(--accent); color: white; border: none; padding: 0.65rem 1.5rem; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.95rem; cursor: pointer; }
-
-  @media (max-width: 700px) {
-    .messages-layout { grid-template-columns: 1fr; }
-    .thread-list { display: none; }
-    .thread-list.show { display: flex; position: fixed; inset: 58px 0 0 0; z-index: 50; }
-  }
 </style>
 </head>
 <body>
 
 <nav id="artwave-nav"></nav>
 
-<div id="auth-wall-wrap" style="display:none">
-  <div class="auth-wall">
-    <div style="font-size:3rem;margin-bottom:1rem">💬</div>
-    <h2>Log in to view messages</h2>
-    <p>You need an account to send and receive messages.</p>
-    <button class="btn-primary" onclick="goTo('auth')">Log In or Sign Up</button>
-  </div>
+<!-- AUTH WALL -->
+<div class="auth-wall" id="auth-wall" style="display:none">
+  <div style="font-size:3rem;margin-bottom:1rem">💬</div>
+  <h2>Log in to view messages</h2>
+  <p>You need an account to send and receive messages.</p>
+  <button class="btn-primary" onclick="goTo('auth')">Log In or Sign Up</button>
 </div>
 
-<div class="messages-layout" id="messages-layout" style="display:none">
+<!-- MAIN PAGE -->
+<div class="page" id="main-page" style="display:none">
 
   <!-- THREAD LIST -->
-  <div class="thread-list" id="thread-list">
-    <div class="thread-list-header">
+  <div class="thread-list">
+    <div class="tl-header">
       <h2>Messages</h2>
       <p id="thread-count">Loading…</p>
     </div>
-    <div class="thread-search">
-      <input type="text" id="thread-search" placeholder="Search commissions…" oninput="filterThreads()"/>
+    <div class="tl-search">
+      <input type="text" id="thread-search" placeholder="Search…" oninput="filterThreads()"/>
     </div>
-    <div class="threads" id="threads-wrap">
+    <div class="tl-items" id="tl-items">
       <div style="padding:2rem;text-align:center"><div class="spinner"></div></div>
     </div>
   </div>
 
-  <!-- CHAT AREA -->
-  <div class="chat-area" id="chat-area">
+  <!-- CHAT PANEL -->
+  <div class="chat-panel" id="chat-panel">
+
+    <!-- Empty state -->
     <div class="chat-empty" id="chat-empty">
       <div class="chat-empty-icon">💬</div>
       <h3>Select a conversation</h3>
       <p>Choose a commission from the left to start messaging</p>
     </div>
-    <div id="chat-main" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+
+    <!-- Active chat (hidden until thread selected) -->
+    <div id="active-chat" style="display:none;flex:1;flex-direction:column;overflow:hidden;height:100%">
       <div class="chat-header" id="chat-header"></div>
-      <div class="messages-wrap" id="messages-wrap"></div>
-      <div class="chat-input-wrap">
-        <div class="attach-preview" id="attach-preview"></div>
-        <div class="chat-input-row">
-          <div class="chat-input-box">
-            <textarea class="chat-input" id="chat-input" placeholder="Type a message…" rows="1"
-              onkeydown="handleInputKey(event)" oninput="autoResize(this)"></textarea>
-            <button class="attach-btn" onclick="document.getElementById('attach-input').click()" title="Attach image">📎</button>
-            <input type="file" id="attach-input" class="attach-input" accept="image/*" onchange="handleAttach(this)"/>
+      <div class="msgs-wrap" id="msgs-wrap"></div>
+      <div class="chat-input-bar">
+        <div class="attach-previews" id="attach-previews"></div>
+        <div class="input-row">
+          <div class="input-box">
+            <textarea class="msg-input" id="msg-input" rows="1"
+              placeholder="Type a message… (Enter to send)"
+              onkeydown="handleKey(event)"
+              oninput="autoResize(this)"></textarea>
+            <button class="attach-trigger" onclick="document.getElementById('file-input').click()">📎</button>
+            <input type="file" id="file-input" class="file-input" accept="image/*" onchange="handleFile(this)"/>
           </div>
           <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
         </div>
       </div>
     </div>
-  </div>
 
+  </div>
 </div>
 
 <script src="artwave-nav.js"></script>
@@ -281,221 +249,182 @@
   let currentProfile = null;
   let allThreads = [];
   let activeCommissionId = null;
-  let activeCommission = null;
-  let realtimeSubscription = null;
-  let pendingAttachment = null;
+  let realtimeSub = null;
+  let pendingFile = null;
 
   const MSG_COLORS = ['#019587','#005148','#A6BC09','#01415B','#017a6e','#4a7a6a','#2980b9'];
-  function getColor(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%MSG_COLORS.length; return MSG_COLORS[h]; }
-  function getInitial(name) { return (name||'?')[0].toUpperCase(); }
-  function formatTime(d) {
-    const date = new Date(d);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    if (isToday) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  function getColor(s) { let h=0; for(let c of (s||'')) h=(h*31+c.charCodeAt(0))%MSG_COLORS.length; return MSG_COLORS[h]; }
+  function getInitial(n) { return (n||'?')[0].toUpperCase(); }
+  function fmtTime(d) {
+    const dt = new Date(d), now = new Date();
+    if (dt.toDateString()===now.toDateString()) return dt.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    return dt.toLocaleDateString([],{month:'short',day:'numeric'});
   }
-  function formatDate(d) {
-    const date = new Date(d);
-    const now = new Date();
-    if (date.toDateString() === now.toDateString()) return 'Today';
-    const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  function fmtDate(d) {
+    const dt = new Date(d), now = new Date();
+    if (dt.toDateString()===now.toDateString()) return 'Today';
+    const y = new Date(now); y.setDate(y.getDate()-1);
+    if (dt.toDateString()===y.toDateString()) return 'Yesterday';
+    return dt.toLocaleDateString([],{month:'long',day:'numeric',year:'numeric'});
   }
 
   // ── INIT ───────────────────────────────────────
   async function init() {
     const session = await initNav();
-    if (!session) { document.getElementById('auth-wall-wrap').style.display = 'flex'; return; }
+    if (!session) { document.getElementById('auth-wall').style.display = 'flex'; return; }
     currentUser = window.AF.user;
     currentProfile = window.AF.profile;
-    document.getElementById('messages-layout').style.display = 'grid';
+    document.getElementById('main-page').style.display = 'grid';
     await loadThreads();
-
-    // Check if coming from a commission page
     const params = new URLSearchParams(window.location.search);
-    const commissionId = params.get('commission');
-    if (commissionId) openThread(commissionId);
+    const cid = params.get('commission');
+    if (cid) openThread(cid);
   }
 
   // ── LOAD THREADS ───────────────────────────────
   async function loadThreads() {
     const isArtist = currentProfile?.is_artist;
     const field = isArtist ? 'artist_id' : 'client_id';
-    const joinField = isArtist
-      ? 'profiles!commissions_client_id_fkey(display_name, username)'
-      : 'profiles!commissions_artist_id_fkey(display_name, username)';
+    const join = isArtist
+      ? 'profiles!commissions_client_id_fkey(display_name,username)'
+      : 'profiles!commissions_artist_id_fkey(display_name,username)';
 
-    const { data } = await window.AF.db.from('commissions')
-      .select(`id, title, commission_type, status, updated_at, ${joinField}`)
+    const { data: commissions } = await window.AF.db.from('commissions')
+      .select(`id,title,commission_type,status,updated_at,${join}`)
       .eq(field, currentUser.id)
-      .not('status', 'eq', 'cancelled')
-      .order('updated_at', { ascending: false });
+      .not('status','eq','cancelled')
+      .order('updated_at',{ascending:false});
 
-    allThreads = data || [];
-
-    // Get unread counts
-    const { data: unread } = await window.AF.db.from('messages')
-      .select('commission_id')
-      .eq('is_read', false)
-      .neq('sender_id', currentUser.id)
-      .in('commission_id', allThreads.map(t => t.id));
-
-    const unreadMap = {};
-    (unread || []).forEach(m => {
-      unreadMap[m.commission_id] = (unreadMap[m.commission_id] || 0) + 1;
-    });
-
-    // Get last message per thread
-    const { data: lastMsgs } = await window.AF.db.from('messages')
-      .select('commission_id, body, created_at, sender_id')
-      .in('commission_id', allThreads.map(t => t.id))
-      .order('created_at', { ascending: false });
-
-    const lastMsgMap = {};
-    (lastMsgs || []).forEach(m => {
-      if (!lastMsgMap[m.commission_id]) lastMsgMap[m.commission_id] = m;
-    });
-
-    renderThreads(allThreads, unreadMap, lastMsgMap);
-  }
-
-  // ── RENDER THREADS ─────────────────────────────
-  function renderThreads(threads, unreadMap = {}, lastMsgMap = {}) {
-    const wrap = document.getElementById('threads-wrap');
-    document.getElementById('thread-count').textContent = `${threads.length} conversation${threads.length !== 1 ? 's' : ''}`;
-
-    if (!threads.length) {
-      wrap.innerHTML = `<div class="threads-empty">No commissions yet.<br/>Commissions will appear here once started.</div>`;
+    allThreads = commissions || [];
+    if (!allThreads.length) {
+      document.getElementById('tl-items').innerHTML = `<div class="tl-empty">No commissions yet.<br/>Commissions appear here once started.</div>`;
+      document.getElementById('thread-count').textContent = '0 conversations';
       return;
     }
 
+    const ids = allThreads.map(t=>t.id);
+    const { data: unreadRows } = await window.AF.db.from('messages')
+      .select('commission_id').eq('is_read',false).neq('sender_id',currentUser.id).in('commission_id',ids);
+    const unreadMap = {};
+    (unreadRows||[]).forEach(m=>{ unreadMap[m.commission_id]=(unreadMap[m.commission_id]||0)+1; });
+
+    const { data: lastRows } = await window.AF.db.from('messages')
+      .select('commission_id,body,created_at,sender_id').in('commission_id',ids).order('created_at',{ascending:false});
+    const lastMap = {};
+    (lastRows||[]).forEach(m=>{ if(!lastMap[m.commission_id]) lastMap[m.commission_id]=m; });
+
+    renderThreads(allThreads, unreadMap, lastMap);
+  }
+
+  function renderThreads(threads, unreadMap={}, lastMap={}) {
+    document.getElementById('thread-count').textContent = `${threads.length} conversation${threads.length!==1?'s':''}`;
+    const wrap = document.getElementById('tl-items');
+    if (!threads.length) { wrap.innerHTML = `<div class="tl-empty">No results found</div>`; return; }
     wrap.innerHTML = threads.map(t => {
       const other = t.profiles;
       const name = other?.display_name || other?.username || 'Unknown';
       const color = getColor(name);
-      const unread = unreadMap[t.id] || 0;
-      const lastMsg = lastMsgMap[t.id];
-      const preview = lastMsg ? (lastMsg.sender_id === currentUser.id ? 'You: ' : '') + lastMsg.body : 'No messages yet';
-      const time = lastMsg ? formatTime(lastMsg.created_at) : formatTime(t.updated_at);
-      const isActive = t.id === activeCommissionId;
-
+      const unread = unreadMap[t.id]||0;
+      const last = lastMap[t.id];
+      const preview = last ? (last.sender_id===currentUser.id?'You: ':'')+last.body : 'No messages yet';
+      const time = last ? fmtTime(last.created_at) : fmtTime(t.updated_at);
       return `
-        <div class="thread-item ${isActive ? 'active' : ''}" onclick="openThread('${t.id}')">
-          <div class="thread-avatar" style="background:${color}">${getInitial(name)}</div>
-          <div class="thread-info">
-            <div class="thread-name">${name}</div>
-            <div class="thread-commission">${t.commission_type || t.title || 'Commission'}</div>
-            <div class="thread-preview">${preview.substring(0, 50)}${preview.length > 50 ? '…' : ''}</div>
+        <div class="thread-item ${t.id===activeCommissionId?'active':''}" onclick="openThread('${t.id}')">
+          <div class="t-avatar" style="background:${color}">${getInitial(name)}</div>
+          <div class="t-info">
+            <div class="t-name">${name}</div>
+            <div class="t-sub">${t.commission_type||t.title||'Commission'}</div>
+            <div class="t-preview">${(preview||'').substring(0,45)}${(preview||'').length>45?'…':''}</div>
           </div>
-          <div class="thread-meta">
-            <div class="thread-time">${time}</div>
-            ${unread > 0 ? `<div class="unread-badge">${unread}</div>` : ''}
+          <div class="t-meta">
+            <div class="t-time">${time}</div>
+            ${unread>0?`<div class="unread">${unread}</div>`:''}
           </div>
         </div>`;
     }).join('');
   }
 
-  // ── FILTER THREADS ─────────────────────────────
   function filterThreads() {
     const q = document.getElementById('thread-search').value.toLowerCase();
     const filtered = allThreads.filter(t => {
-      const name = t.profiles?.display_name || t.profiles?.username || '';
-      const title = t.commission_type || t.title || '';
-      return name.toLowerCase().includes(q) || title.toLowerCase().includes(q);
+      const name = t.profiles?.display_name||t.profiles?.username||'';
+      return name.toLowerCase().includes(q)||(t.commission_type||t.title||'').toLowerCase().includes(q);
     });
     renderThreads(filtered);
   }
 
   // ── OPEN THREAD ────────────────────────────────
-  async function openThread(commissionId) {
-    activeCommissionId = commissionId;
-    const thread = allThreads.find(t => t.id === commissionId);
-    activeCommission = thread;
+  async function openThread(id) {
+    activeCommissionId = id;
+    const t = allThreads.find(x=>x.id===id);
 
-    // Update thread list active state
-    document.querySelectorAll('.thread-item').forEach(el => el.classList.remove('active'));
-    const threadEl = document.querySelector(`[onclick="openThread('${commissionId}')"]`);
-    if (threadEl) threadEl.classList.add('active');
+    // Update sidebar active
+    document.querySelectorAll('.thread-item').forEach(el=>el.classList.remove('active'));
+    document.querySelectorAll('.thread-item').forEach(el=>{
+      if(el.getAttribute('onclick')===`openThread('${id}')`) el.classList.add('active');
+    });
 
     // Show chat
     document.getElementById('chat-empty').style.display = 'none';
-    const chatMain = document.getElementById('chat-main');
-    chatMain.style.display = 'flex';
-    chatMain.style.flexDirection = 'column';
-    chatMain.style.overflow = 'hidden';
-    chatMain.style.flex = '1';
+    const ac = document.getElementById('active-chat');
+    ac.style.display = 'flex';
 
-    // Render header
-    const other = thread?.profiles;
-    const name = other?.display_name || other?.username || 'Unknown';
+    // Header
+    const other = t?.profiles;
+    const name = other?.display_name||other?.username||'Unknown';
     const color = getColor(name);
     document.getElementById('chat-header').innerHTML = `
-      <div class="chat-header-avatar" style="background:${color}">${getInitial(name)}</div>
-      <div class="chat-header-info">
+      <div class="ch-avatar" style="background:${color}">${getInitial(name)}</div>
+      <div class="ch-info">
         <h3>${name}</h3>
-        <p>${thread?.commission_type || thread?.title || 'Commission'} · <span style="color:var(--accent)">${thread?.status?.replace('_',' ') || ''}</span></p>
+        <p>${t?.commission_type||t?.title||'Commission'} · <span style="color:var(--accent)">${(t?.status||'').replace(/_/g,' ')}</span></p>
       </div>
-      <div class="chat-header-actions">
-        <button class="btn-sm-outline" onclick="goTo('commissions')">View Commission →</button>
+      <div class="ch-actions">
+        <button class="btn-sm-link" onclick="goTo('commissions')">View Commission →</button>
       </div>`;
 
-    await loadMessages(commissionId);
-    subscribeToMessages(commissionId);
-    markAsRead(commissionId);
+    await loadMessages(id);
+    subscribeRealtime(id);
+    markRead(id);
   }
 
   // ── LOAD MESSAGES ──────────────────────────────
-  async function loadMessages(commissionId) {
-    const wrap = document.getElementById('messages-wrap');
+  async function loadMessages(id) {
+    const wrap = document.getElementById('msgs-wrap');
     wrap.innerHTML = `<div style="text-align:center;padding:2rem"><div class="spinner"></div></div>`;
-
     const { data } = await window.AF.db.from('messages')
-      .select('*, profiles!messages_sender_id_fkey(display_name, username)')
-      .eq('commission_id', commissionId)
-      .order('created_at', { ascending: true });
-
-    renderMessages(data || []);
-    scrollToBottom();
+      .select('*,profiles!messages_sender_id_fkey(display_name,username)')
+      .eq('commission_id',id)
+      .order('created_at',{ascending:true});
+    renderMessages(data||[]);
+    scrollBottom();
   }
 
-  // ── RENDER MESSAGES ────────────────────────────
-  function renderMessages(messages) {
-    const wrap = document.getElementById('messages-wrap');
-    if (!messages.length) {
-      wrap.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:0.88rem;padding:2rem">No messages yet — say hello! 👋</div>`;
+  function renderMessages(msgs) {
+    const wrap = document.getElementById('msgs-wrap');
+    if (!msgs.length) {
+      wrap.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:0.85rem;padding:2rem">No messages yet — say hello! 👋</div>`;
       return;
     }
-
     let lastDate = null;
-    wrap.innerHTML = messages.map(m => {
-      const isOwn = m.sender_id === currentUser.id;
-      const name = m.profiles?.display_name || m.profiles?.username || 'Unknown';
-      const color = getColor(name);
-      const time = formatTime(m.created_at);
-      const dateLabel = formatDate(m.created_at);
+    wrap.innerHTML = msgs.map(m => {
+      const isOwn = m.sender_id===currentUser.id;
+      const name = m.profiles?.display_name||m.profiles?.username||'Unknown';
+      const color = getColor(isOwn ? currentUser.email : name);
+      const initial = getInitial(isOwn ? (currentProfile?.display_name||currentUser.email) : name);
+      const dateLabel = fmtDate(m.created_at);
       let html = '';
-
-      if (dateLabel !== lastDate) {
-        html += `<div class="date-divider">${dateLabel}</div>`;
-        lastDate = dateLabel;
-      }
-
+      if (dateLabel!==lastDate) { html+=`<div class="date-sep">${dateLabel}</div>`; lastDate=dateLabel; }
       html += `
-        <div class="msg-group ${isOwn ? 'own' : ''}">
-          ${!isOwn ? `<div class="msg-avatar" style="background:${color}">${getInitial(name)}</div>` : ''}
-          <div>
-            <div class="msg-bubble">
-              ${m.body ? `<div>${m.body}</div>` : ''}
-              ${m.attachment_url ? `
-                <div class="msg-attachment">
-                  <img src="${m.attachment_url}" alt="attachment" onclick="window.open('${m.attachment_url}','_blank')"/>
-                </div>` : ''}
+        <div class="msg-row ${isOwn?'own':''}">
+          <div class="m-avatar" style="background:${color}">${initial}</div>
+          <div class="m-content">
+            <div class="m-bubble">
+              ${m.body?`<div>${m.body}</div>`:''}
+              ${m.attachment_url?`<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`:''}
             </div>
-            <div class="msg-time">${time}</div>
+            <div class="m-time">${fmtTime(m.created_at)}</div>
           </div>
-          ${isOwn ? `<div class="msg-avatar" style="background:${getColor(currentUser.email)}">${getInitial(currentProfile?.display_name || currentUser.email)}</div>` : ''}
         </div>`;
       return html;
     }).join('');
@@ -503,131 +432,128 @@
 
   // ── SEND MESSAGE ───────────────────────────────
   async function sendMessage() {
-    const input = document.getElementById('chat-input');
+    const input = document.getElementById('msg-input');
     const body = input.value.trim();
-    if (!body && !pendingAttachment) return;
+    if (!body && !pendingFile) return;
 
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
 
     let attachmentUrl = null;
-    let attachmentType = null;
-
-    if (pendingAttachment) {
-      const ext = pendingAttachment.name.split('.').pop();
+    if (pendingFile) {
+      const ext = pendingFile.name.split('.').pop();
       const path = `messages/${currentUser.id}/${Date.now()}.${ext}`;
-      const { error: uploadErr } = await window.AF.db.storage.from('portfolio').upload(path, pendingAttachment);
-      if (!uploadErr) {
+      const { error: upErr } = await window.AF.db.storage.from('portfolio').upload(path, pendingFile);
+      if (!upErr) {
         const { data: urlData } = window.AF.db.storage.from('portfolio').getPublicUrl(path);
         attachmentUrl = urlData.publicUrl;
-        attachmentType = 'image';
       }
-      pendingAttachment = null;
-      document.getElementById('attach-preview').innerHTML = '';
+      pendingFile = null;
+      document.getElementById('attach-previews').innerHTML = '';
+      document.getElementById('file-input').value = '';
     }
 
-    const { error } = await window.AF.db.from('messages').insert({
+    // Optimistically append message immediately
+    const optimisticMsg = {
+      id: 'temp-' + Date.now(),
       commission_id: activeCommissionId,
       sender_id: currentUser.id,
       body: body || null,
       attachment_url: attachmentUrl,
-      attachment_type: attachmentType
+      created_at: new Date().toISOString(),
+      profiles: { display_name: currentProfile?.display_name, username: currentProfile?.username }
+    };
+    appendMsg(optimisticMsg);
+    input.value = '';
+    input.style.height = 'auto';
+    btn.disabled = false;
+
+    // Save to database
+    await window.AF.db.from('messages').insert({
+      commission_id: activeCommissionId,
+      sender_id: currentUser.id,
+      body: body || null,
+      attachment_url: attachmentUrl,
+      attachment_type: attachmentUrl ? 'image' : null
     });
 
-    btn.disabled = false;
-    if (!error) {
-      input.value = '';
-      input.style.height = 'auto';
-    }
+    await loadThreads();
+  }
+
+  // ── APPEND SINGLE MESSAGE ──────────────────────
+  function appendMsg(m) {
+    const wrap = document.getElementById('msgs-wrap');
+    // Remove empty state
+    const empty = wrap.querySelector('[style*="say hello"]');
+    if (empty) empty.remove();
+
+    const isOwn = m.sender_id===currentUser.id;
+    const name = m.profiles?.display_name||m.profiles?.username||'Unknown';
+    const color = getColor(isOwn ? currentUser.email : name);
+    const initial = getInitial(isOwn ? (currentProfile?.display_name||currentUser.email) : name);
+
+    const el = document.createElement('div');
+    el.className = `msg-row ${isOwn?'own':''}`;
+    el.id = m.id;
+    el.innerHTML = `
+      <div class="m-avatar" style="background:${color}">${initial}</div>
+      <div class="m-content">
+        <div class="m-bubble">
+          ${m.body?`<div>${m.body}</div>`:''}
+          ${m.attachment_url?`<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`:''}
+        </div>
+        <div class="m-time">${fmtTime(m.created_at)}</div>
+      </div>`;
+    wrap.appendChild(el);
+    scrollBottom();
   }
 
   // ── REALTIME ───────────────────────────────────
-  function subscribeToMessages(commissionId) {
-    if (realtimeSubscription) realtimeSubscription.unsubscribe();
-    realtimeSubscription = window.AF.db
-      .channel(`messages:${commissionId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `commission_id=eq.${commissionId}`
-      }, async (payload) => {
-        const msg = payload.new;
-        // Fetch sender profile
-        const { data: profile } = await window.AF.db.from('profiles').select('display_name, username').eq('id', msg.sender_id).single();
-        msg.profiles = profile;
-        appendMessage(msg);
-        if (msg.sender_id !== currentUser.id) markAsRead(commissionId);
-        await loadThreads(); // refresh thread list preview
-      })
+  function subscribeRealtime(id) {
+    if (realtimeSub) realtimeSub.unsubscribe();
+    realtimeSub = window.AF.db
+      .channel(`msgs-${id}`)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`commission_id=eq.${id}`},
+        async (payload) => {
+          const m = payload.new;
+          if (m.sender_id === currentUser.id) return; // already shown optimistically
+          const { data: p } = await window.AF.db.from('profiles').select('display_name,username').eq('id',m.sender_id).single();
+          m.profiles = p;
+          appendMsg(m);
+          markRead(id);
+        })
       .subscribe();
   }
 
-  function appendMessage(msg) {
-    const wrap = document.getElementById('messages-wrap');
-    const isOwn = msg.sender_id === currentUser.id;
-    const name = msg.profiles?.display_name || msg.profiles?.username || 'Unknown';
-    const color = getColor(name);
-    const time = formatTime(msg.created_at);
-
-    // Remove empty state
-    const emptyEl = wrap.querySelector('div[style*="No messages"]');
-    if (emptyEl) emptyEl.remove();
-
-    const el = document.createElement('div');
-    el.className = `msg-group ${isOwn ? 'own' : ''}`;
-    el.innerHTML = `
-      ${!isOwn ? `<div class="msg-avatar" style="background:${color}">${getInitial(name)}</div>` : ''}
-      <div>
-        <div class="msg-bubble">
-          ${msg.body ? `<div>${msg.body}</div>` : ''}
-          ${msg.attachment_url ? `<div class="msg-attachment"><img src="${msg.attachment_url}" alt="attachment" onclick="window.open('${msg.attachment_url}','_blank')"/></div>` : ''}
-        </div>
-        <div class="msg-time">${time}</div>
-      </div>
-      ${isOwn ? `<div class="msg-avatar" style="background:${getColor(currentUser.email)}">${getInitial(currentProfile?.display_name || currentUser.email)}</div>` : ''}`;
-    wrap.appendChild(el);
-    scrollToBottom();
+  async function markRead(id) {
+    await window.AF.db.from('messages').update({is_read:true})
+      .eq('commission_id',id).neq('sender_id',currentUser.id).eq('is_read',false);
   }
 
-  // ── MARK AS READ ───────────────────────────────
-  async function markAsRead(commissionId) {
-    await window.AF.db.from('messages').update({ is_read: true })
-      .eq('commission_id', commissionId)
-      .neq('sender_id', currentUser.id)
-      .eq('is_read', false);
-  }
-
-  // ── ATTACHMENT ─────────────────────────────────
-  function handleAttach(input) {
-    const file = input.files[0];
-    if (!file) return;
-    pendingAttachment = file;
+  // ── FILE ATTACH ────────────────────────────────
+  function handleFile(input) {
+    const file = input.files[0]; if (!file) return;
+    pendingFile = file;
     const url = URL.createObjectURL(file);
-    document.getElementById('attach-preview').innerHTML = `
-      <div class="attach-preview-item">
-        <img src="${url}" alt="attachment"/>
-        <button class="attach-remove" onclick="removeAttach()">×</button>
+    document.getElementById('attach-previews').innerHTML = `
+      <div class="ap-item">
+        <img src="${url}"/>
+        <button class="ap-remove" onclick="clearFile()">×</button>
       </div>`;
   }
-  function removeAttach() {
-    pendingAttachment = null;
-    document.getElementById('attach-preview').innerHTML = '';
-    document.getElementById('attach-input').value = '';
+  function clearFile() {
+    pendingFile = null;
+    document.getElementById('attach-previews').innerHTML = '';
+    document.getElementById('file-input').value = '';
   }
 
   // ── UTILS ──────────────────────────────────────
-  function scrollToBottom() {
-    const wrap = document.getElementById('messages-wrap');
-    setTimeout(() => wrap.scrollTop = wrap.scrollHeight, 50);
+  function scrollBottom() {
+    const w = document.getElementById('msgs-wrap');
+    requestAnimationFrame(()=>{ w.scrollTop = w.scrollHeight; });
   }
-  function handleInputKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  }
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-  }
+  function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+  function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,110)+'px'; }
 
   init();
 </script>
