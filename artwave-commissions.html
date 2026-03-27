@@ -776,13 +776,17 @@
   async function handlePaymentReturn() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
+      // Log full URL for debugging
+      console.log('Full return URL:', window.location.href);
+      console.log('All params:', Object.fromEntries(params));
+
       // Parse ref parameter — format: commissionId__type
       const ref = params.get('ref') || '';
       const parts = ref.split('__');
       const commissionId = parts[0] || params.get('commission');
       const type = parts[1] || params.get('type') || 'deposit';
 
-      console.log('Payment return:', { commissionId, type, user: currentUser?.id });
+      console.log('Payment return:', { commissionId, type, user: currentUser?.id, ref });
 
       if (commissionId && type) {
         const updates = type === 'deposit'
