@@ -85,14 +85,27 @@ function _activePage() {
   if (path.includes('profile'))     return 'profile';
   if (path.includes('commissions')) return 'commissions';
   if (path.includes('dashboard'))   return 'dashboard';
+  if (path.includes('messages'))    return 'messages';
   if (path.includes('discover'))    return 'discover';
   return '';
 }
 
 // Navigate to the user's own profile
 async function goToProfile() {
-  if (!window.AF.profile) return;
-  window.location.href = 'artwave-profile.html?u=' + window.AF.profile.username;
+  if (!window.AF.user) { window.location.href = 'artwave-auth.html'; return; }
+  if (window.AF.profile?.username) {
+    window.location.href = 'artwave-profile.html?u=' + window.AF.profile.username;
+    return;
+  }
+  // Fallback — fetch username directly
+  const { data } = await db.from('profiles').select('username').eq('id', window.AF.user.id).single();
+  if (data?.username) {
+    window.AF.profile = data;
+    window.location.href = 'artwave-profile.html?u=' + data.username;
+  } else {
+    // No profile exists yet — send to auth to complete onboarding
+    window.location.href = 'artwave-auth.html';
+  }
 }
 
 // Navigate to any page
@@ -101,6 +114,7 @@ function goTo(page) {
     discover:    'artwave-discover.html',
     commissions: 'artwave-commissions.html',
     dashboard:   'artwave-dashboard.html',
+    messages:    'artwave-messages.html',
     auth:        'artwave-auth.html',
   };
   if (pages[page]) window.location.href = pages[page];
@@ -128,6 +142,7 @@ async function initNav() {
       <div class="nav-links">
         <button class="nav-btn ${active==='discover'?'active':''}"  onclick="goTo('discover')">Discover</button>
         <button class="nav-btn ${active==='profile'?'active':''}"   onclick="goToProfile()">My Profile</button>
+        <button class="nav-btn ${active==='messages'?'active':''}"  onclick="goTo('messages')">Messages</button>
         <button class="nav-btn ${active==='dashboard'?'active':''}" onclick="goTo('dashboard')">Dashboard</button>
       </div>
       <div class="nav-right">
