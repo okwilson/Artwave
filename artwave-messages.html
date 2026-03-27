@@ -588,13 +588,24 @@
     btn.disabled = false;
 
     // Save to database
-    await window.AF.db.from('messages').insert({
+    const { data: msgData } = await window.AF.db.from('messages').insert({
       commission_id: activeCommissionId,
       sender_id: currentUser.id,
       body: body || null,
       attachment_url: attachmentUrl,
       attachment_type: attachmentUrl ? 'image' : null
-    });
+    }).select().single();
+
+    // Notify the other person
+    const t = allThreads.find(x => x.id === activeCommissionId);
+    if (t && typeof createNotification === 'function') {
+      const otherProfile = t.profiles;
+      const otherId = currentProfile?.is_artist ? t.client_id || otherProfile?.id : t.artist_id || otherProfile?.id;
+      if (otherId) {
+        const senderName = currentProfile?.display_name || currentProfile?.username || 'Someone';
+        await createNotification(otherId, 'new_message', `New message from ${senderName}`, body ? body.substring(0, 60) : 'Sent an image', 'artwave-messages.html');
+      }
+    }
 
     await loadThreads();
   }

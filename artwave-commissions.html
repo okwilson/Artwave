@@ -863,6 +863,27 @@
 
     closeModal('status');
     showToast('Status updated! ✓');
+
+    // Send notification to the other party
+    const c = allCommissions.find(x => x.id === activeCommissionId);
+    if (c) {
+      const isArtist = currentProfile?.is_artist;
+      const notifyUserId = isArtist ? c.client_id : c.artist_id;
+      const statusMessages = {
+        accepted:    { title: 'Commission accepted!', body: 'Your commission request has been accepted. Please pay the 50% deposit to begin.' },
+        in_progress: { title: 'Work has started!', body: 'The artist has started working on your commission.' },
+        in_review:   { title: 'Work submitted for review', body: 'The artist has submitted work for your review. Please approve or request changes.' },
+        delivered:   { title: 'Commission delivered!', body: 'Your commission has been delivered. Please make the final payment.' },
+        revision:    { title: 'Revision requested', body: 'The client has requested a revision on your commission.' },
+        cancelled:   { title: 'Commission cancelled', body: 'A commission has been cancelled.' },
+        paid:        { title: 'Payment received!', body: 'Payment has been confirmed for your commission.' },
+      };
+      const msg = statusMessages[pendingStatus];
+      if (msg && notifyUserId) {
+        await createNotification(notifyUserId, pendingStatus === 'in_review' || pendingStatus === 'revision' ? 'status_update' : 'commission_accepted', msg.title, msg.body, 'artwave-commissions.html');
+      }
+    }
+
     if (currentProfile?.is_artist) await loadArtistCommissions();
     else await loadClientCommissions();
   }
