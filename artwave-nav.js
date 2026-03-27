@@ -144,7 +144,19 @@ async function initNav() {
     const initial = _getInitial(name);
 
     navEl.innerHTML = `
-      <div class="nav-logo" onclick="goTo('discover')">Art<span>wave</span></div>
+      <div class="nav-logo" onclick="goTo('discover')" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;background:none;border:none;">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Abstract artistic mark — overlapping geometric shapes suggesting creativity and flow -->
+          <rect x="2" y="8" width="12" height="12" rx="1" fill="#019587" opacity="0.9"/>
+          <rect x="8" y="4" width="12" height="12" rx="1" fill="#A6BC09" opacity="0.85"/>
+          <rect x="14" y="12" width="12" height="12" rx="1" fill="#f0f7e6" opacity="0.7"/>
+          <!-- Bold outline stroke -->
+          <rect x="2" y="8" width="12" height="12" rx="1" fill="none" stroke="#f0f7e6" stroke-width="1.5"/>
+          <rect x="8" y="4" width="12" height="12" rx="1" fill="none" stroke="#f0f7e6" stroke-width="1.5"/>
+          <rect x="14" y="12" width="12" height="12" rx="1" fill="none" stroke="#f0f7e6" stroke-width="1.5"/>
+        </svg>
+        <span style="font-family:'Bodoni Moda','Playfair Display',serif;font-size:1.35rem;font-weight:900;letter-spacing:-.01em;color:#f0f7e6;">Art<span style="color:#A6BC09;font-style:normal;font-weight:900;letter-spacing:-.02em;">wave</span></span>
+      </div>
       <div class="nav-links">
         <button class="nav-btn ${active==='discover'?'active':''}"  onclick="goTo('discover')">Discover</button>
         <button class="nav-btn ${active==='profile'?'active':''}"   onclick="goToProfile()">My Profile</button>
@@ -211,7 +223,17 @@ async function initNav() {
     }
   } else {
     navEl.innerHTML = `
-      <div class="nav-logo" onclick="goTo('discover')">Art<span>wave</span></div>
+      <div class="nav-logo" onclick="goTo('discover')" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;background:none;border:none;">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="8" width="12" height="12" rx="1" fill="#019587" opacity="0.9"/>
+          <rect x="8" y="4" width="12" height="12" rx="1" fill="#A6BC09" opacity="0.85"/>
+          <rect x="14" y="12" width="12" height="12" rx="1" fill="#f0f7e6" opacity="0.7"/>
+          <rect x="2" y="8" width="12" height="12" rx="1" fill="none" stroke="#f0f7e6" stroke-width="1.5"/>
+          <rect x="8" y="4" width="12" height="12" rx="1" fill="none" stroke="#f0f7e6" stroke-width="1.5"/>
+          <rect x="14" y="12" width="12" height="12" rx="1" fill="none" stroke="#f0f7e6" stroke-width="1.5"/>
+        </svg>
+        <span style="font-family:'Bodoni Moda','Playfair Display',serif;font-size:1.35rem;font-weight:900;letter-spacing:-.01em;color:#f0f7e6;">Art<span style="color:#A6BC09;font-style:normal;font-weight:900;letter-spacing:-.02em;">wave</span></span>
+      </div>
       <div class="nav-links">
         <button class="nav-btn ${active==='discover'?'active':''}" onclick="goTo('discover')">Discover</button>
       </div>
@@ -221,8 +243,14 @@ async function initNav() {
       </div>`;
   }
 
-  // Return session so each page can use it
-  return session;
+      // Add Bodoni Moda font for logo if not already loaded
+      if (!document.getElementById('af-logo-font')) {
+        const link = document.createElement('link');
+        link.id = 'af-logo-font';
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,700;0,900;1,700&display=swap';
+        document.head.appendChild(link);
+      }
 }
 
 async function signOut() {
