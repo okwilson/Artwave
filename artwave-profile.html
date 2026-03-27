@@ -462,7 +462,7 @@
 
 <!-- NOT FOUND -->
 <div class="not-found" id="not-found" style="padding-top:58px;">
-  <div class="emoji">🎨</div>
+  <div class="emoji"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-2 0-3-1-3-3 0-1.5 1-2.5 1-4 0-3-2-5-5-5"/></svg></div>
   <h2>Artist not found</h2>
   <p>This profile doesn't exist or may have been removed.</p>
   <button class="btn-primary" onclick="window.location.href='artwave-discover.html'">Browse Artists</button>
@@ -503,7 +503,7 @@
     <div class="tab-content active" id="tab-portfolio">
       <div id="upload-section" style="display:none">
         <div class="upload-area" onclick="openModal('upload')">
-          <div class="upload-icon">🖼️</div>
+          <div class="upload-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
           <div class="upload-text"><strong>Upload new artwork</strong> — images, GIFs, or videos</div>
         </div>
       </div>
@@ -580,7 +580,7 @@
 
     <!-- AI WARNING BANNER -->
     <div style="background:#fff8e1;border:2px solid #A6BC09;border-radius:6px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#01415B;line-height:1.5">
-      🎨 <strong>Artwave is a platform for human-made art only.</strong> AI-generated images are not permitted. All uploads are scanned and can be flagged by the community.
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-2 0-3-1-3-3 0-1.5 1-2.5 1-4 0-3-2-5-5-5"/></svg> <strong>Artwave is a platform for human-made art only.</strong> AI-generated images are not permitted. All uploads are scanned and can be flagged by the community.
     </div>
 
     <div class="form-group">
@@ -683,7 +683,7 @@
   // ── FLAG ITEM ──────────────────────────────────
   async function flagItem(itemId, btn) {
     if (!currentUser) { showToast('Please log in to flag artwork'); return; }
-    btn.textContent = '🚩 Flagging…';
+    btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Flagging…';
     btn.disabled = true;
 
     const { error } = await window.AF.db.from('portfolio_flags').insert({
@@ -698,7 +698,7 @@
       } else {
         showToast('Could not flag: ' + error.message);
       }
-      btn.textContent = '🚩'; btn.disabled = false;
+      btn.textContent = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>'; btn.disabled = false;
       return;
     }
 
@@ -711,7 +711,7 @@
       ai_flagged: newCount >= 3
     }).eq('id', itemId);
 
-    showToast('🚩 Flagged for review — thank you!');
+    showToast('<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> Flagged for review — thank you!');
     await loadPortfolio(profileData.id);
   }
 
@@ -886,15 +886,15 @@
             ${item.description ? `<div style="font-size:0.78rem;margin-top:0.25rem;opacity:0.85">${item.description}</div>` : ''}
           </div>
         </div>
-        ${isPinned ? `<div style="position:absolute;top:6px;left:6px;background:var(--gold);color:var(--ink);font-size:0.65rem;font-weight:800;padding:0.2rem 0.45rem;border-radius:2px;border:1.5px solid var(--ink)">📌 Pinned</div>` : ''}
+        ${isPinned ? `<div style="position:absolute;top:6px;left:6px;background:var(--gold);color:var(--ink);font-size:0.65rem;font-weight:800;padding:0.2rem 0.45rem;border-radius:2px;border:1.5px solid var(--ink)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg> Pinned</div>` : ''}
         ${isHidden ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(184,64,64,0.15);font-size:0.75rem;font-weight:700;color:#b84040;text-align:center;padding:0.5rem">⚠️ Hidden — flagged for review</div>` : ''}
         ${isOwnProfile ? `
           <button onclick="togglePin('${item.id}', ${isPinned}, ${pinnedCount})" class="pin-btn" style="position:absolute;bottom:6px;left:6px;background:${isPinned ? 'var(--gold)' : 'rgba(0,0,0,0.6)'};color:${isPinned ? 'var(--ink)' : 'white'};border:none;border-radius:3px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;font-weight:700">
-            ${isPinned ? '📌 Unpin' : '📌 Pin'}
+            ${isPinned ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg> Unpin' : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg> Pin'}
           </button>` : ''}
         ${!isOwnProfile && currentUser ? `
           <button onclick="flagItem('${item.id}', this)" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:3px;padding:0.2rem 0.4rem;font-size:0.68rem;cursor:pointer;opacity:0;transition:opacity 0.2s" class="flag-btn">
-            🚩 ${item.flag_count > 0 ? item.flag_count : ''}
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> ${item.flag_count > 0 ? item.flag_count : ''}
           </button>` : ''}
         ${item.ai_flagged ? `<div style="position:absolute;top:6px;${isPinned ? 'left:70px' : 'left:6px'};background:#b84040;color:white;font-size:0.65rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:2px">⚠️ Under review</div>` : ''}
       </div>`;
@@ -930,7 +930,7 @@
     }).eq('id', itemId);
 
     if (error) { showToast('Could not update pin: ' + error.message); return; }
-    showToast(newPinned ? '📌 Pinned to your profile!' : 'Unpinned');
+    showToast(newPinned ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg> Pinned to your profile!' : 'Unpinned');
     await loadPortfolio(currentUser.id);
   }
 
@@ -1030,7 +1030,7 @@
     }
 
     closeModal('commission');
-    showToast('Commission request sent! 🎨');
+    showToast('Commission request sent! <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-2 0-3-1-3-3 0-1.5 1-2.5 1-4 0-3-2-5-5-5"/></svg>');
   }
 
   // ── UPLOAD ARTWORK ─────────────────────────────

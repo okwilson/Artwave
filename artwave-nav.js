@@ -165,16 +165,20 @@ async function initNav() {
       mobileNav.id = 'af-mobile-nav';
       mobileNav.innerHTML = `
         <button class="af-mn-btn ${active==='discover'?'af-active':''}" onclick="goTo('discover')">
-          <span>🔍</span>Discover
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Discover
         </button>
         <button class="af-mn-btn ${active==='profile'?'af-active':''}" onclick="goToProfile()">
-          <span>👤</span>Profile
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Profile
         </button>
         <button class="af-mn-btn ${active==='messages'?'af-active':''}" onclick="goTo('messages')">
-          <span>💬</span>Messages
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Messages
         </button>
         <button class="af-mn-btn ${active==='dashboard'?'af-active':''}" onclick="goTo('dashboard')">
-          <span>📊</span>Dashboard
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
         </button>`;
       document.body.appendChild(mobileNav);
 
@@ -195,7 +199,7 @@ async function initNav() {
           font-family: 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: .04em;
           transition: color 0.15s;
         }
-        .af-mn-btn span { font-size: 1.3rem; line-height: 1; display: block; }
+        .af-mn-btn svg { width: 22px; height: 22px; stroke: currentColor; }
         .af-mn-btn.af-active { color: #A6BC09; }
         .af-mn-btn:hover { color: #f0f7e6; }
         @media (max-width: 768px) {

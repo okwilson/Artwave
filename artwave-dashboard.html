@@ -356,15 +356,15 @@
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar" style="display:none">
     <div class="sidebar-section">Overview</div>
-    <div class="sidebar-item active" onclick="showPanel('overview', this)"><span class="sidebar-icon">📊</span> Overview</div>
-    <div class="sidebar-item" onclick="showPanel('commissions-panel', this)"><span class="sidebar-icon">🎨</span> Commissions <span class="sidebar-badge" id="sb-commissions">0</span></div>
-    <div class="sidebar-item" onclick="showPanel('portfolio-panel', this)"><span class="sidebar-icon">🖼️</span> Portfolio</div>
+    <div class="sidebar-item active" onclick="showPanel('overview', this)"><span class="sidebar-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span> Overview</div>
+    <div class="sidebar-item" onclick="showPanel('commissions-panel', this)"><span class="sidebar-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-2 0-3-1-3-3 0-1.5 1-2.5 1-4 0-3-2-5-5-5"/></svg></span> Commissions <span class="sidebar-badge" id="sb-commissions">0</span></div>
+    <div class="sidebar-item" onclick="showPanel('portfolio-panel', this)"><span class="sidebar-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span> Portfolio</div>
     <div class="sidebar-section">Finance</div>
-    <div class="sidebar-item" onclick="showPanel('invoices-panel', this)"><span class="sidebar-icon">🧾</span> Invoices</div>
-    <div class="sidebar-item" onclick="showPanel('earnings-panel', this)"><span class="sidebar-icon">💰</span> Earnings</div>
+    <div class="sidebar-item" onclick="showPanel('invoices-panel', this)"><span class="sidebar-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> Invoices</div>
+    <div class="sidebar-item" onclick="showPanel('earnings-panel', this)"><span class="sidebar-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span> Earnings</div>
     <div class="sidebar-section">Account</div>
-    <div class="sidebar-item" onclick="showPanel('settings-panel', this)"><span class="sidebar-icon">⚙️</span> Settings</div>
-    <div class="sidebar-item" onclick="signOut()"><span class="sidebar-icon">🚪</span> Log Out</div>
+    <div class="sidebar-item" onclick="showPanel('settings-panel', this)"><span class="sidebar-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span> Settings</div>
+    <div class="sidebar-item" onclick="signOut()"><span class="sidebar-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> Log Out</div>
   </div>
 
   <!-- MAIN -->
@@ -417,9 +417,9 @@
             <h3>Quick Actions</h3>
             <div class="quick-actions">
               <button class="qa-btn" onclick="goToProfile()"><span class="qa-icon">👤</span>My Profile</button>
-              <button class="qa-btn" onclick="goTo('commissions')"><span class="qa-icon">🎨</span>Commissions</button>
-              <button class="qa-btn" onclick="showPanel('portfolio-panel', null)"><span class="qa-icon">🖼️</span>Portfolio</button>
-              <button class="qa-btn" onclick="showPanel('invoices-panel', null)"><span class="qa-icon">🧾</span>Invoices</button>
+              <button class="qa-btn" onclick="goTo('commissions')"><span class="qa-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-2 0-3-1-3-3 0-1.5 1-2.5 1-4 0-3-2-5-5-5"/></svg></span>Commissions</button>
+              <button class="qa-btn" onclick="showPanel('portfolio-panel', null)"><span class="qa-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span>Portfolio</button>
+              <button class="qa-btn" onclick="showPanel('invoices-panel', null)"><span class="qa-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>Invoices</button>
             </div>
           </div>
           <div class="side-card" id="earnings-side-card">
@@ -685,7 +685,7 @@
 
   function renderAllCommissions() {
     if (!commissions.length) {
-      document.getElementById('all-commissions-wrap').innerHTML = `<div class="empty"><div class="empty-icon">🎨</div><h3>No commissions yet</h3></div>`;
+      document.getElementById('all-commissions-wrap').innerHTML = `<div class="empty"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-2 0-3-1-3-3 0-1.5 1-2.5 1-4 0-3-2-5-5-5"/></svg></div><h3>No commissions yet</h3></div>`;
       return;
     }
     document.getElementById('all-commissions-wrap').innerHTML = commissionTableHTML(commissions);
@@ -695,7 +695,7 @@
   function renderPortfolio() {
     const wrap = document.getElementById('portfolio-wrap');
     if (!portfolioItems.length) {
-      wrap.innerHTML = `<div class="empty"><div class="empty-icon">🖼️</div><h3>No portfolio items yet</h3><p>Upload artwork from your profile page.</p></div>`;
+      wrap.innerHTML = `<div class="empty"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div><h3>No portfolio items yet</h3><p>Upload artwork from your profile page.</p></div>`;
       return;
     }
     const PLACEHOLDERS = ['🦊','🧚','🐉','🌸','🔮','🌿','🦋','🎭'];
@@ -714,7 +714,7 @@
   function renderInvoices() {
     const wrap = document.getElementById('invoices-wrap');
     if (!invoices.length) {
-      wrap.innerHTML = `<div class="empty"><div class="empty-icon">🧾</div><h3>No invoices yet</h3><p>Generate invoices from the Commissions page.</p></div>`;
+      wrap.innerHTML = `<div class="empty"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div><h3>No invoices yet</h3><p>Generate invoices from the Commissions page.</p></div>`;
       return;
     }
     const statusClass = { draft:'inv-draft', sent:'inv-sent', paid:'inv-paid', overdue:'inv-overdue' };
@@ -738,7 +738,7 @@
   function renderEarnings() {
     const paid = commissions.filter(c => c.status === 'paid');
     if (!paid.length) {
-      document.getElementById('earnings-table-wrap').innerHTML = `<div class="empty"><div class="empty-icon">💰</div><h3>No paid commissions yet</h3></div>`;
+      document.getElementById('earnings-table-wrap').innerHTML = `<div class="empty"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><h3>No paid commissions yet</h3></div>`;
       document.getElementById('earnings-summary').innerHTML = `<p style="color:var(--muted);font-size:0.88rem">Earnings will appear here once commissions are marked as paid.</p>`;
       return;
     }
@@ -876,19 +876,19 @@
 <!-- MOBILE BOTTOM NAV -->
 <div class="mobile-nav" id="mobile-nav">
   <button class="mobile-nav-btn active" onclick="showPanel('overview', this); setMobileActive(this)">
-    <span class="mn-icon">📊</span>Overview
+    <span class="mn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>Overview
   </button>
   <button class="mobile-nav-btn" onclick="showPanel('commissions-panel', this); setMobileActive(this)">
-    <span class="mn-icon">🎨</span>Work
+    <span class="mn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20c-2 0-3-1-3-3 0-1.5 1-2.5 1-4 0-3-2-5-5-5"/></svg></span>Work
   </button>
   <button class="mobile-nav-btn" onclick="showPanel('earnings-panel', this); setMobileActive(this)">
-    <span class="mn-icon">💰</span>Earnings
+    <span class="mn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Earnings
   </button>
   <button class="mobile-nav-btn" onclick="showPanel('portfolio-panel', this); setMobileActive(this)">
-    <span class="mn-icon">🖼️</span>Portfolio
+    <span class="mn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span>Portfolio
   </button>
   <button class="mobile-nav-btn" onclick="showPanel('settings-panel', this); setMobileActive(this)">
-    <span class="mn-icon">⚙️</span>Settings
+    <span class="mn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span>Settings
   </button>
 </div>
 
