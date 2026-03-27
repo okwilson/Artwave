@@ -545,10 +545,26 @@
   // ── INIT ───────────────────────────────────────
   async function init() {
     const session = await initNav();
-    if (!session) {
+
+    // If no session returned, try getting it directly as a fallback
+    let finalSession = session;
+    if (!finalSession) {
+      const { data: { session: s2 } } = await window.AF.db.auth.getSession();
+      finalSession = s2;
+    }
+
+    if (!finalSession) {
       document.getElementById('auth-wall').style.display = 'block';
       return;
     }
+
+    // Make sure AF state is populated
+    if (!window.AF.user) window.AF.user = finalSession.user;
+    if (!window.AF.profile) {
+      const { data: p } = await window.AF.db.from('profiles').select('*').eq('id', finalSession.user.id).single();
+      window.AF.profile = p;
+    }
+
     currentUser = window.AF.user;
     currentProfile = window.AF.profile;
 
