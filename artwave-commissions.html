@@ -664,7 +664,8 @@
         }
         return `<button class="btn-sm btn-progress" onclick="updateStatus('${id}','in_progress','Start Work','Mark this commission as in progress?')">Start Work</button>`;
       case 'in_progress':
-        return `<button class="btn-sm btn-deliver" onclick="updateStatus('${id}','in_review','Submit for Review','Submit your work for the client to review?')">Submit for Review</button>`;
+        return `<button class="btn-sm btn-deliver" onclick="updateStatus('${id}','in_review','Submit for Review','Submit your work for the client to review?')">Submit for Review</button>
+                <button class="btn-sm btn-view" onclick="window.location.href='artwave-messages.html?commission=${id}'">Send WIP</button>`;
       case 'in_review':
         return `<button class="btn-sm btn-progress" onclick="updateStatus('${id}','delivered','Mark Delivered','Mark this commission as delivered?')">Mark Delivered</button>`;
       case 'revision':
@@ -676,9 +677,11 @@
         return `<button class="btn-sm btn-invoice" onclick="openInvoiceModal('${id}')">Generate Invoice</button>
                 <button class="btn-sm btn-progress" onclick="updateStatus('${id}','paid','Mark as Paid','Mark this commission as fully paid?')">Mark Paid</button>`;
       case 'paid':
-        return `<button class="btn-sm btn-view" onclick="openDetail('${id}')">View</button>`;
+        return `<button class="btn-sm btn-view" onclick="window.location.href='artwave-messages.html?commission=${id}'">View Chat</button>`;
       default:
-        return `<button class="btn-sm btn-view" onclick="goTo('messages')">💬 Message</button>`;
+        return `<button class="btn-sm btn-deliver" onclick="window.location.href='artwave-messages.html?commission=${id}'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Send WIP</button>`;
     }
   }
 
@@ -807,12 +810,30 @@
             ? '✅ Deposit paid! Artist can now begin work.'
             : '✅ Final payment made! Commission complete.');
 
+          // Auto-generate invoice on final payment
+          if (type === 'final') {
+            const commission = allCommissions.find(c => c.id === commissionId);
+            if (commission) {
+              const due = new Date(); due.setDate(due.getDate() + 7);
+              await window.AF.db.from('invoices').insert({
+                commission_id: commissionId,
+                artist_id: commission.artist_id,
+                client_id: currentUser.id,
+                amount: commission.amount || 0,
+                status: 'paid',
+                due_date: due.toISOString().split('T')[0],
+                paid_at: new Date().toISOString()
+              });
+            }
+          }
+
           // Notify artist
           const commission = allCommissions.find(c => c.id === commissionId);
           if (commission && typeof createNotification === 'function') {
             await createNotification(commission.artist_id, 'payment',
-              type === 'deposit' ? '50% deposit received!' : 'Final payment received!',
-              'Payment confirmed for your commission.', 'artwave-commissions.html');
+              type === 'deposit' ? '50% deposit received!' : 'Final payment received! 🎉',
+              type === 'final' ? 'Your commission is fully paid. An invoice has been generated.' : 'Payment confirmed for your commission.',
+              'artwave-commissions.html');
           }
         }
       }
@@ -952,8 +973,8 @@
     document.getElementById('invoice-modal-sub').textContent = `For: ${clientName} · ${c.commission_type || c.title}`;
     document.getElementById('invoice-preview').innerHTML = `
       <div class="invoice-row"><span>${c.commission_type || 'Commission'}</span><span>$${c.amount || 0}</span></div>
-      <div class="invoice-row"><span>Platform fee (0%)</span><span>$0.00</span></div>
-      <div class="invoice-row"><span><strong>Total</strong></span><span><strong>$${c.amount || 0}</strong></span></div>
+      <div class="invoice-row"><span>Artwave platform fee (7%)</span><span>-$${((c.amount||0)*0.07).toFixed(2)}</span></div>
+      <div class="invoice-row"><span><strong>Artist receives</strong></span><span><strong>$${((c.amount||0)*0.93).toFixed(2)}</strong></span></div>
     `;
     document.getElementById('invoice-alert').innerHTML = '';
     // Set default due date to 7 days from now
