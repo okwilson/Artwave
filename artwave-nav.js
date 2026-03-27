@@ -75,8 +75,8 @@ window.AF = {
   profile: null,
 };
 
-const COLORS = ['#019587','#2980b9','#8e44ad','#4a7c59','#c0392b','#e91e63','#A6BC09'];
-function _getColor(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%COLORS.length; return COLORS[h]; }
+const NAV_COLORS = ['#019587','#2980b9','#8e44ad','#4a7c59','#c0392b','#e91e63','#A6BC09'];
+function _getColor(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%NAV_COLORS.length; return NAV_COLORS[h]; }
 function _getInitial(name) { return (name||'?')[0].toUpperCase(); }
 
 // Determine which page is active based on filename

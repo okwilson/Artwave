@@ -285,8 +285,8 @@
   let realtimeSubscription = null;
   let pendingAttachment = null;
 
-  const COLORS = ['#019587','#005148','#A6BC09','#01415B','#017a6e','#4a7a6a','#2980b9'];
-  function getColor(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%COLORS.length; return COLORS[h]; }
+  const MSG_COLORS = ['#019587','#005148','#A6BC09','#01415B','#017a6e','#4a7a6a','#2980b9'];
+  function getColor(str) { let h=0; for(let c of (str||'')) h=(h*31+c.charCodeAt(0))%MSG_COLORS.length; return MSG_COLORS[h]; }
   function getInitial(name) { return (name||'?')[0].toUpperCase(); }
   function formatTime(d) {
     const date = new Date(d);
