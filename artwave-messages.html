@@ -409,7 +409,7 @@
       : 'profiles!commissions_artist_id_fkey(display_name,username)';
 
     const { data: commissions } = await window.AF.db.from('commissions')
-      .select(`id,title,commission_type,status,updated_at,${join}`)
+      .select(`id,title,commission_type,status,updated_at,artist_id,client_id,${join}`)
       .eq(field, currentUser.id)
       .not('status','eq','cancelled')
       .order('updated_at',{ascending:false});
@@ -599,9 +599,9 @@
     // Notify the other person
     const t = allThreads.find(x => x.id === activeCommissionId);
     if (t && typeof createNotification === 'function') {
-      const otherProfile = t.profiles;
-      const otherId = currentProfile?.is_artist ? t.client_id || otherProfile?.id : t.artist_id || otherProfile?.id;
-      if (otherId) {
+      const isArtist = currentProfile?.is_artist;
+      const otherId = isArtist ? t.client_id : t.artist_id;
+      if (otherId && otherId !== currentUser.id) {
         const senderName = currentProfile?.display_name || currentProfile?.username || 'Someone';
         await createNotification(otherId, 'new_message', `New message from ${senderName}`, body ? body.substring(0, 60) : 'Sent an image', 'artwave-messages.html');
       }
