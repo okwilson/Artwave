@@ -174,8 +174,38 @@
     .settings-grid { grid-template-columns: 1fr; }
   }
 
+  @media (max-width: 430px) {
+    .stats-row { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .stat-card { padding: 0.9rem; }
+    .stat-card-num { font-size: 1.5rem; }
+    .dash-main { padding: 1rem; }
+    .greeting h2 { font-size: 1.3rem; }
+    .table-card-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    th, td { padding: 0.6rem 0.75rem; font-size: 0.78rem; }
+    .side-card { padding: 1rem; }
+    .settings-section { padding: 1rem; }
+    /* Bottom nav for mobile */
+    .mobile-nav {
+      display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--ink); border-top: 2px solid var(--gold);
+      z-index: 99; padding: 0.5rem 0;
+    }
+    .mobile-nav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 0.2rem; background: none; border: none; color: var(--cream);
+      font-size: 0.6rem; font-weight: 600; cursor: pointer; padding: 0.4rem;
+      font-family: 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .mobile-nav-btn .mn-icon { font-size: 1.3rem; }
+    .mobile-nav-btn.active { color: var(--gold); }
+    .dash-main { padding-bottom: 5rem; }
+  }
+
+  @media (min-width: 431px) {
+    .mobile-nav { display: none; }
+  }
+
   /* ── SHARED NAV ── */
-  nav#artwave-
   nav#artwave-nav .nav-logo {
     font-family: 'Playfair Display', serif; font-size: 1.4rem;
     letter-spacing: .04em; cursor: pointer; color: var(--cream);
@@ -712,6 +742,11 @@
     }
   }
 
+  function setMobileActive(el) {
+    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+
   // ── PANEL SWITCHING ────────────────────────────
   function showPanel(name, clickedEl) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -727,6 +762,25 @@
 
   // init() called after nav.js loads
 </script>
+<!-- MOBILE BOTTOM NAV -->
+<div class="mobile-nav" id="mobile-nav">
+  <button class="mobile-nav-btn active" onclick="showPanel('overview', this); setMobileActive(this)">
+    <span class="mn-icon">📊</span>Overview
+  </button>
+  <button class="mobile-nav-btn" onclick="showPanel('commissions-panel', this); setMobileActive(this)">
+    <span class="mn-icon">🎨</span>Work
+  </button>
+  <button class="mobile-nav-btn" onclick="showPanel('earnings-panel', this); setMobileActive(this)">
+    <span class="mn-icon">💰</span>Earnings
+  </button>
+  <button class="mobile-nav-btn" onclick="showPanel('portfolio-panel', this); setMobileActive(this)">
+    <span class="mn-icon">🖼️</span>Portfolio
+  </button>
+  <button class="mobile-nav-btn" onclick="showPanel('settings-panel', this); setMobileActive(this)">
+    <span class="mn-icon">⚙️</span>Settings
+  </button>
+</div>
+
 <script src="artwave-nav.js"></script>
 <script>init();</script>
 </body>

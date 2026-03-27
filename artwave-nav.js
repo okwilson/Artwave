@@ -57,6 +57,12 @@
       padding: 0.4rem 0.6rem; border-radius: 4px;
     }
     nav#artwave-nav .nav-logout:hover { color: #f0f7e6; }
+    @media (max-width: 600px) {
+      nav#artwave-nav { padding: 0 1rem; }
+      nav#artwave-nav .nav-links { display: none; }
+      nav#artwave-nav .nav-user span { display: none; }
+      nav#artwave-nav .nav-logout { display: none; }
+    }
   `;
   document.head.appendChild(style);
 })();
