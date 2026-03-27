@@ -16,12 +16,14 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
 
-    // 50/50 split — each payment is half the total
-    const halfCents    = Math.round((amount / 2) * 100);
-    const platformFee  = Math.round(halfCents * 0.07);
-    const artistPayout = halfCents - platformFee;
-    const isDeposit    = paymentType === 'deposit';
-    const label        = isDeposit ? '50% Deposit' : 'Final 50% Payment';
+    const halfCents   = Math.round((amount / 2) * 100);
+    const platformFee = Math.round(halfCents * 0.07);
+    const isDeposit   = paymentType === 'deposit';
+    const label       = isDeposit ? '50% Deposit' : 'Final 50% Payment';
+
+    // Encode type into commission ID to avoid Stripe stripping params
+    // Format: commissionId__type
+    const sessionRef = `${commissionId}__${paymentType || 'deposit'}`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -30,21 +32,20 @@ module.exports = async function handler(req, res) {
           currency: 'usd',
           product_data: {
             name: `${commissionTitle || 'Artwave Commission'} — ${label}`,
-            description: `${isDeposit ? 'Deposit to begin work' : 'Final payment on delivery'} · Artist receives $${(artistPayout/100).toFixed(2)}`,
+            description: `${isDeposit ? 'Deposit to begin work' : 'Final payment on delivery'} via Artwave`,
           },
           unit_amount: halfCents,
         },
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: `https://artwave-sigma.vercel.app/artwave-commissions.html?payment=success&commission=${commissionId}&type=${paymentType}`,
+      success_url: `https://artwave-sigma.vercel.app/artwave-commissions.html?payment=success&ref=${encodeURIComponent(sessionRef)}`,
       cancel_url:  `https://artwave-sigma.vercel.app/artwave-commissions.html?payment=cancelled`,
       customer_email: clientEmail || undefined,
       metadata: {
         commission_id: commissionId || '',
         payment_type:  paymentType || 'deposit',
         platform_fee:  platformFee.toString(),
-        artist_payout: artistPayout.toString(),
       },
     });
 
