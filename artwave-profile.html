@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Artwave — Artist Profile</title>
+<title>Artist Profile — Artwave</title>
+  <meta name="robots" content="index, follow"/>
+  <meta name="theme-color" content="#01415B"/>
+  <meta property="og:site_name" content="Artwave"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <!-- Dynamic SEO set by JS below -->
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -757,7 +762,31 @@
     profileData = data;
     isOwnProfile = currentUser && currentUser.id === data.id;
 
-    document.title = `${data.display_name || data.username} — Artwave`;
+    // Dynamic SEO for artist profiles
+    const tags = (data.profile_tags || []).map(pt => pt.tags?.name).filter(Boolean);
+    const profileUrl = `https://artwave-sigma.vercel.app/artwave-profile.html?u=${data.username}`;
+    const seoTitle = `${data.display_name || data.username} — ${tags[0] || 'Artist'} | Artwave`;
+    const seoDesc = data.bio
+      ? `${data.bio.substring(0, 150)} — Commission ${data.display_name || data.username} on Artwave.`
+      : `Commission ${data.display_name || data.username} on Artwave. ${tags.slice(0,3).join(', ')} artist${data.location ? ' based in ' + data.location : ''}.`;
+
+    document.title = seoTitle;
+
+    const setMeta = (name, content, prop=false) => {
+      let el = document.querySelector(`meta[${prop?'property':'name'}="${name}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute(prop?'property':'name', name); document.head.appendChild(el); }
+      el.setAttribute('content', content);
+    };
+    setMeta('description', seoDesc);
+    setMeta('og:title', seoTitle, true);
+    setMeta('og:description', seoDesc, true);
+    setMeta('og:url', profileUrl, true);
+    setMeta('og:type', 'profile', true);
+    setMeta('twitter:title', seoTitle);
+    setMeta('twitter:description', seoDesc);
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+    canonical.href = profileUrl;
 
     renderProfile(data);
     await Promise.all([loadPortfolio(data.id), loadReviews(data.id)]);

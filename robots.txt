@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /artwave-discover.html
+Allow: /artwave-profile.html
+Allow: /artwave-auth.html
+Disallow: /artwave-dashboard.html
+Disallow: /artwave-commissions.html
+Disallow: /artwave-messages.html
+
+Sitemap: https://artwave-sigma.vercel.app/sitemap.xml
