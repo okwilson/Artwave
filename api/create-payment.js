@@ -1,9 +1,7 @@
-import Stripe from 'stripe';
+const Stripe = require('stripe');
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://artwave-sigma.vercel.app');
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -11,51 +9,50 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
   try {
-    const { amount, artistStripeId, commissionId, commissionTitle, clientEmail, artistName } = req.body;
+    const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+    const { amount, commissionId, commissionTitle, clientEmail, artistName, paymentType } = req.body;
 
     if (!amount || amount < 1) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
 
-    const totalCents  = Math.round(amount * 100);
-    const platformFee = Math.round(totalCents * 0.07);
+    const halfCents   = Math.round((amount / 2) * 100);
+    const platformFee = Math.round(halfCents * 0.07);
+    const isDeposit   = paymentType === 'deposit';
+    const label       = isDeposit ? '50% Deposit' : 'Final 50% Payment';
 
-    const sessionParams = {
+    // Encode type into commission ID to avoid Stripe stripping params
+    // Format: commissionId__type
+    const sessionRef = `${commissionId}__${paymentType || 'deposit'}`;
+
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
         price_data: {
           currency: 'usd',
           product_data: {
-            name: commissionTitle || 'Artwave Commission',
-            description: `Commission with ${artistName || 'artist'} via Artwave`,
+            name: `${commissionTitle || 'Artwave Commission'} — ${label}`,
+            description: `${isDeposit ? 'Deposit to begin work' : 'Final payment on delivery'} via Artwave`,
           },
-          unit_amount: totalCents,
+          unit_amount: halfCents,
         },
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: `https://artwave-sigma.vercel.app/artwave-commissions.html?payment=success&commission=${commissionId}`,
+      success_url: `https://artwave-sigma.vercel.app/artwave-commissions.html?payment=success&ref=${encodeURIComponent(sessionRef)}`,
       cancel_url:  `https://artwave-sigma.vercel.app/artwave-commissions.html?payment=cancelled`,
       customer_email: clientEmail || undefined,
       metadata: {
-        commission_id:    commissionId || '',
-        platform_fee:     platformFee.toString(),
-        artist_stripe_id: artistStripeId || '',
+        commission_id: commissionId || '',
+        payment_type:  paymentType || 'deposit',
+        platform_fee:  platformFee.toString(),
       },
-    };
+    });
 
-    if (artistStripeId) {
-      sessionParams.payment_intent_data = {
-        application_fee_amount: platformFee,
-        transfer_data: { destination: artistStripeId },
-      };
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionParams);
     res.status(200).json({ url: session.url, sessionId: session.id });
 
   } catch (err) {
-    console.error('Stripe error:', err);
+    console.error('Stripe error:', err.message);
     res.status(500).json({ error: err.message });
   }
-}
+};
