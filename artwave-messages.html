@@ -179,6 +179,107 @@
   .auth-wall h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 0.75rem; }
   .auth-wall p { color: var(--muted); margin-bottom: 1.5rem; }
   .btn-primary { background: var(--accent); color: white; border: none; padding: 0.65rem 1.5rem; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.95rem; cursor: pointer; }
+
+  /* ── CEL SHADING GLOBAL STYLES ── */
+  body { background-color: #d8edcc !important; }
+
+  /* Cards */
+  .artist-card, .commission-card, .review-card, .stat-card,
+  .table-card, .side-card, .settings-section, .info-card,
+  .invoice-card, .commissions-table, .earnings-card,
+  .thread-list, .modal {
+    border: 2.5px solid #01415B !important;
+    box-shadow: 5px 5px 0 #01415B !important;
+    border-radius: 4px !important;
+  }
+
+  /* Buttons */
+  .btn-primary, .btn-commission, .btn-save, .send-btn,
+  .btn-modal-primary, .btn-main {
+    border: 2px solid #01415B !important;
+    box-shadow: 3px 3px 0 #01415B !important;
+    border-radius: 4px !important;
+    transition: transform 0.1s, box-shadow 0.1s !important;
+    font-weight: 700 !important;
+  }
+  .btn-primary:hover, .btn-commission:hover, .btn-save:hover,
+  .btn-modal-primary:hover, .btn-main:hover {
+    transform: translate(-1px, -1px) !important;
+    box-shadow: 4px 4px 0 #01415B !important;
+  }
+  .btn-primary:active, .btn-commission:active, .btn-save:active,
+  .btn-modal-primary:active, .btn-main:active {
+    transform: translate(3px, 3px) !important;
+    box-shadow: none !important;
+  }
+
+  /* Status pills */
+  .status-pill, .commission-status, .open-badge, .closed-badge {
+    border: 1.5px solid #01415B !important;
+    border-radius: 3px !important;
+    font-weight: 700 !important;
+  }
+
+  /* Tags */
+  .tag {
+    border: 1.5px solid #005148 !important;
+    border-radius: 2px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.68rem !important;
+    letter-spacing: .04em !important;
+  }
+
+  /* Form inputs */
+  .form-group input, .form-group textarea, .form-group select,
+  .msg-input, .chat-input {
+    border: 2px solid #01415B !important;
+    border-radius: 4px !important;
+    background: #f0f7e6 !important;
+  }
+  .form-group input:focus, .form-group textarea:focus,
+  .form-group select:focus, .msg-input:focus {
+    box-shadow: 3px 3px 0 #019587 !important;
+    outline: none !important;
+  }
+
+  /* Tables */
+  th { background: #01415B !important; color: #f0f7e6 !important; border-bottom: 2px solid #A6BC09 !important; }
+  tr:hover td { background: #e8f4d8 !important; }
+
+  /* Sidebar */
+  .sidebar { border-right: 3px solid #A6BC09 !important; }
+
+  /* Section titles */
+  .section-title { border-bottom: 2px solid #01415B !important; font-family: 'Playfair Display', serif; }
+
+  /* Hatch background on page */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M0 12L12 0' stroke='%2301415B' stroke-width='0.4' opacity='0.07'/%3E%3C/svg%3E");
+  }
+
+  /* Message bubbles */
+  .m-bubble, .msg-bubble {
+    border: 1.5px solid rgba(1,65,91,0.2) !important;
+  }
+  .msg-row.own .m-bubble, .msg-group.own .msg-bubble {
+    border-color: #017a6e !important;
+    box-shadow: 2px 2px 0 #005148 !important;
+  }
+
+  /* Profile avatar */
+  .profile-avatar, .card-avatar, .t-avatar, .ch-avatar,
+  .m-avatar, .nav-avatar, .review-avatar {
+    border: 2.5px solid #01415B !important;
+    box-shadow: 2px 2px 0 #01415B !important;
+  }
+
+  /* Nav */
+  nav#artwave-nav { border-bottom: 3px solid #A6BC09 !important; }
+
+  /* ── END CEL ── */
 </style>
 </head>
 <body>
@@ -510,19 +611,33 @@
 
   // ── REALTIME ───────────────────────────────────
   function subscribeRealtime(id) {
-    if (realtimeSub) realtimeSub.unsubscribe();
+    if (realtimeSub) {
+      realtimeSub.unsubscribe();
+      realtimeSub = null;
+    }
     realtimeSub = window.AF.db
-      .channel(`msgs-${id}`)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`commission_id=eq.${id}`},
-        async (payload) => {
+      .channel(`msgs-${id}-${Date.now()}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      }, async (payload) => {
           const m = payload.new;
-          if (m.sender_id === currentUser.id) return; // already shown optimistically
-          const { data: p } = await window.AF.db.from('profiles').select('display_name,username').eq('id',m.sender_id).single();
+          // Only handle messages for the active commission
+          if (m.commission_id !== activeCommissionId) return;
+          // Skip own messages — already shown optimistically
+          if (m.sender_id === currentUser.id) return;
+          const { data: p } = await window.AF.db
+            .from('profiles').select('display_name,username')
+            .eq('id', m.sender_id).single();
           m.profiles = p;
           appendMsg(m);
           markRead(id);
+          await loadThreads();
         })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime status:', status);
+      });
   }
 
   async function markRead(id) {
