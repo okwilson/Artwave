@@ -152,6 +152,61 @@
   .m-img { margin-top: 0.4rem; border-radius: 8px; overflow: hidden; max-width: 180px; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; }
   .m-img img { width: 100%; display: block; }
 
+  /* WATERMARK */
+  .m-img-protected {
+    position: relative; margin-top: 0.4rem; border-radius: 8px;
+    overflow: hidden; max-width: 220px; border: 2px solid #01415B;
+    box-shadow: 3px 3px 0 #01415B;
+  }
+  .m-img-protected img {
+    width: 100%; display: block;
+    filter: blur(1px) brightness(0.85);
+    pointer-events: none; user-select: none;
+    -webkit-user-drag: none;
+  }
+  .m-img-protected::after {
+    content: '';
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent, transparent 40px,
+      rgba(1,65,91,0.12) 40px, rgba(1,65,91,0.12) 41px
+    );
+  }
+  .watermark-label {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    pointer-events: none; gap: 0.3rem;
+  }
+  .watermark-text {
+    background: rgba(1,65,91,0.85); color: #A6BC09;
+    font-size: 0.65rem; font-weight: 800; padding: 0.25rem 0.6rem;
+    border-radius: 3px; letter-spacing: .1em; text-transform: uppercase;
+    font-family: 'DM Sans', sans-serif; text-align: center; line-height: 1.4;
+    border: 1px solid #A6BC09;
+  }
+  .m-img-unlocked {
+    margin-top: 0.4rem; border-radius: 8px; overflow: hidden;
+    max-width: 220px; border: 2px solid #019587;
+    box-shadow: 3px 3px 0 #019587; position: relative;
+  }
+  .m-img-unlocked img { width: 100%; display: block; cursor: pointer; }
+  .m-img-unlocked::after {
+    content: '✓ Paid'; position: absolute; top: 6px; right: 6px;
+    background: #019587; color: white; font-size: 0.62rem; font-weight: 800;
+    padding: 0.15rem 0.45rem; border-radius: 2px; font-family: 'DM Sans', sans-serif;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .download-btn {
+    display: block; margin-top: 0.35rem; background: #019587; color: white;
+    border: 1.5px solid #01415B; border-radius: 3px; padding: 0.3rem 0.6rem;
+    font-size: 0.7rem; font-weight: 700; cursor: pointer; text-align: center;
+    font-family: 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: .05em;
+    text-decoration: none; box-shadow: 2px 2px 0 #01415B;
+  }
+  .download-btn:hover { background: #017a6e; }
+
   /* Date dividers */
   .date-sep { display: flex; align-items: center; gap: 0.6rem; color: var(--muted); font-size: 0.7rem; margin: 0.25rem 0; }
   .date-sep::before, .date-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
@@ -429,7 +484,7 @@
       : 'profiles!commissions_artist_id_fkey(display_name,username)';
 
     const { data: commissions } = await window.AF.db.from('commissions')
-      .select(`id,title,commission_type,status,updated_at,artist_id,client_id,${join}`)
+      .select(`id,title,commission_type,status,updated_at,artist_id,client_id,deposit_paid,final_paid,${join}`)
       .eq(field, currentUser.id)
       .not('status','eq','cancelled')
       .order('updated_at',{ascending:false});
@@ -545,6 +600,12 @@
       wrap.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:0.85rem;padding:2rem">No messages yet — say hello! 👋</div>`;
       return;
     }
+
+    // Check if commission is fully paid
+    const activeThread = allThreads.find(t => t.id === activeCommissionId);
+    const isPaid = activeThread?.final_paid || activeThread?.status === 'paid';
+    const isArtist = currentProfile?.is_artist;
+
     let lastDate = null;
     wrap.innerHTML = msgs.map(m => {
       const isOwn = m.sender_id===currentUser.id;
@@ -554,13 +615,40 @@
       const dateLabel = fmtDate(m.created_at);
       let html = '';
       if (dateLabel!==lastDate) { html+=`<div class="date-sep">${dateLabel}</div>`; lastDate=dateLabel; }
+
+      // Determine image display
+      let imgHtml = '';
+      if (m.attachment_url) {
+        const senderIsArtist = m.sender_id === activeThread?.artist_id;
+        // Watermark if: sent by artist AND client hasn't paid final yet AND viewer is client
+        const shouldWatermark = senderIsArtist && !isPaid && !isArtist;
+
+        if (shouldWatermark) {
+          imgHtml = `
+            <div class="m-img-protected" oncontextmenu="return false">
+              <img src="${m.attachment_url}" draggable="false"/>
+              <div class="watermark-label">
+                <div class="watermark-text">Artwave<br/>Final payment required<br/>to unlock</div>
+              </div>
+            </div>`;
+        } else if (isPaid && !isArtist && senderIsArtist) {
+          imgHtml = `
+            <div class="m-img-unlocked">
+              <img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/>
+            </div>
+            <a href="${m.attachment_url}" download target="_blank" class="download-btn">Download</a>`;
+        } else {
+          imgHtml = `<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`;
+        }
+      }
+
       html += `
         <div class="msg-row ${isOwn?'own':''}">
           <div class="m-avatar" style="background:${color}">${initial}</div>
           <div class="m-content">
             <div class="m-bubble">
               ${m.body?`<div>${m.body}</div>`:''}
-              ${m.attachment_url?`<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`:''}
+              ${imgHtml}
             </div>
             <div class="m-time">${fmtTime(m.created_at)}</div>
           </div>
@@ -633,7 +721,6 @@
   // ── APPEND SINGLE MESSAGE ──────────────────────
   function appendMsg(m) {
     const wrap = document.getElementById('msgs-wrap');
-    // Remove empty state
     const empty = wrap.querySelector('[style*="say hello"]');
     if (empty) empty.remove();
 
@@ -641,6 +728,27 @@
     const name = m.profiles?.display_name||m.profiles?.username||'Unknown';
     const color = getColor(isOwn ? currentUser.email : name);
     const initial = getInitial(isOwn ? (currentProfile?.display_name||currentUser.email) : name);
+
+    const activeThread = allThreads.find(t => t.id === activeCommissionId);
+    const isPaid = activeThread?.final_paid || activeThread?.status === 'paid';
+    const isArtist = currentProfile?.is_artist;
+    const senderIsArtist = m.sender_id === activeThread?.artist_id;
+    const shouldWatermark = senderIsArtist && !isPaid && !isArtist;
+
+    let imgHtml = '';
+    if (m.attachment_url) {
+      if (shouldWatermark) {
+        imgHtml = `
+          <div class="m-img-protected" oncontextmenu="return false">
+            <img src="${m.attachment_url}" draggable="false"/>
+            <div class="watermark-label">
+              <div class="watermark-text">Artwave<br/>Final payment required<br/>to unlock</div>
+            </div>
+          </div>`;
+      } else {
+        imgHtml = `<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`;
+      }
+    }
 
     const el = document.createElement('div');
     el.className = `msg-row ${isOwn?'own':''}`;
@@ -650,7 +758,7 @@
       <div class="m-content">
         <div class="m-bubble">
           ${m.body?`<div>${m.body}</div>`:''}
-          ${m.attachment_url?`<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`:''}
+          ${imgHtml}
         </div>
         <div class="m-time">${fmtTime(m.created_at)}</div>
       </div>`;
