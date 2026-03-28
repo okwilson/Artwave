@@ -587,11 +587,29 @@
   async function loadMessages(id) {
     const wrap = document.getElementById('msgs-wrap');
     wrap.innerHTML = `<div style="text-align:center;padding:2rem"><div class="spinner"></div></div>`;
-    const { data } = await window.AF.db.from('messages')
-      .select('*, sender:profiles!messages_sender_id_fkey(display_name,username)')
-      .eq('commission_id',id)
-      .order('created_at',{ascending:true});
-    renderMessages(data||[]);
+
+    const { data: msgs, error } = await window.AF.db.from('messages')
+      .select('*')
+      .eq('commission_id', id)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Messages error:', error);
+      wrap.innerHTML = `<div style="text-align:center;color:var(--muted);padding:2rem">Could not load messages</div>`;
+      return;
+    }
+
+    // Fetch sender profiles separately
+    if (msgs && msgs.length > 0) {
+      const senderIds = [...new Set(msgs.map(m => m.sender_id))];
+      const { data: profiles } = await window.AF.db.from('profiles')
+        .select('id, display_name, username').in('id', senderIds);
+      const profileMap = {};
+      (profiles || []).forEach(p => profileMap[p.id] = p);
+      msgs.forEach(m => m.sender = profileMap[m.sender_id] || null);
+    }
+
+    renderMessages(msgs || []);
     scrollBottom();
   }
 
