@@ -588,14 +588,20 @@
     const wrap = document.getElementById('msgs-wrap');
     wrap.innerHTML = `<div style="text-align:center;padding:2rem"><div class="spinner"></div></div>`;
 
-    const { data: msgs, error } = await window.AF.db.from('messages')
+    const { data: msgs, error } = await window.AF.db
+      .schema('public')
+      .from('messages')
       .select('*')
       .eq('commission_id', id)
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Messages error:', error);
-      wrap.innerHTML = `<div style="text-align:center;color:var(--muted);padding:2rem">Could not load messages</div>`;
+      console.error('Messages full error:', JSON.stringify(error));
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Error details:', error.details);
+      console.error('Error hint:', error.hint);
+      wrap.innerHTML = `<div style="text-align:center;color:var(--muted);padding:2rem">${error.message}</div>`;
       return;
     }
 
@@ -715,7 +721,7 @@
     btn.disabled = false;
 
     // Save to database
-    const { data: msgData } = await window.AF.db.from('messages').insert({
+    const { data: msgData } = await window.AF.db.schema('public').from('messages').insert({
       commission_id: activeCommissionId,
       sender_id: currentUser.id,
       body: body || null,
@@ -796,7 +802,7 @@
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'messages'
+        table: 'messages', schema: 'public'
       }, async (payload) => {
           const m = payload.new;
           // Only handle messages for the active commission
@@ -817,7 +823,7 @@
   }
 
   async function markRead(id) {
-    await window.AF.db.from('messages').update({is_read:true})
+    await window.AF.db.schema('public').from('messages').update({is_read:true})
       .eq('commission_id',id).neq('sender_id',currentUser.id).eq('is_read',false);
   }
 
