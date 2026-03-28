@@ -498,12 +498,12 @@
     }
 
     const ids = allThreads.map(t=>t.id);
-    const { data: unreadRows } = await window.AF.db.from('messages')
+    const { data: unreadRows } = await window.AF.db.from('commission_messages')
       .select('commission_id').eq('is_read',false).neq('sender_id',currentUser.id).in('commission_id',ids);
     const unreadMap = {};
     (unreadRows||[]).forEach(m=>{ unreadMap[m.commission_id]=(unreadMap[m.commission_id]||0)+1; });
 
-    const { data: lastRows } = await window.AF.db.from('messages')
+    const { data: lastRows } = await window.AF.db.from('commission_messages')
       .select('commission_id,body,created_at,sender_id').in('commission_id',ids).order('created_at',{ascending:false});
     const lastMap = {};
     (lastRows||[]).forEach(m=>{ if(!lastMap[m.commission_id]) lastMap[m.commission_id]=m; });
@@ -590,7 +590,7 @@
 
     const { data: msgs, error } = await window.AF.db
       .schema('public')
-      .from('messages')
+      .from('commission_messages')
       .select('*')
       .eq('commission_id', id)
       .order('created_at', { ascending: true });
@@ -721,7 +721,7 @@
     btn.disabled = false;
 
     // Save to database
-    const { data: msgData } = await window.AF.db.schema('public').from('messages').insert({
+    const { data: msgData } = await window.AF.db.from('commission_messages').insert({
       commission_id: activeCommissionId,
       sender_id: currentUser.id,
       body: body || null,
@@ -802,7 +802,7 @@
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'messages', schema: 'public'
+        table: 'commission_messages', schema: 'public'
       }, async (payload) => {
           const m = payload.new;
           // Only handle messages for the active commission
@@ -823,7 +823,7 @@
   }
 
   async function markRead(id) {
-    await window.AF.db.schema('public').from('messages').update({is_read:true})
+    await window.AF.db.from('commission_messages').update({is_read:true})
       .eq('commission_id',id).neq('sender_id',currentUser.id).eq('is_read',false);
   }
 
