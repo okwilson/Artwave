@@ -588,7 +588,7 @@
     const wrap = document.getElementById('msgs-wrap');
     wrap.innerHTML = `<div style="text-align:center;padding:2rem"><div class="spinner"></div></div>`;
     const { data } = await window.AF.db.from('messages')
-      .select('*,profiles!messages_sender_id_fkey(display_name,username)')
+      .select('*, sender:profiles!messages_sender_id_fkey(display_name,username)')
       .eq('commission_id',id)
       .order('created_at',{ascending:true});
     renderMessages(data||[]);
@@ -610,7 +610,7 @@
     let lastDate = null;
     wrap.innerHTML = msgs.map(m => {
       const isOwn = m.sender_id===currentUser.id;
-      const name = m.profiles?.display_name||m.profiles?.username||'Unknown';
+      const name = m.sender?.display_name||m.sender?.username||'Unknown';
       const color = getColor(isOwn ? currentUser.email : name);
       const initial = getInitial(isOwn ? (currentProfile?.display_name||currentUser.email) : name);
       const dateLabel = fmtDate(m.created_at);
@@ -689,7 +689,7 @@
       body: body || null,
       attachment_url: attachmentUrl,
       created_at: new Date().toISOString(),
-      profiles: { display_name: currentProfile?.display_name, username: currentProfile?.username }
+      sender: { display_name: currentProfile?.display_name, username: currentProfile?.username }
     };
     appendMsg(optimisticMsg);
     input.value = '';
@@ -726,7 +726,7 @@
     if (empty) empty.remove();
 
     const isOwn = m.sender_id===currentUser.id;
-    const name = m.profiles?.display_name||m.profiles?.username||'Unknown';
+    const name = m.sender?.display_name||m.sender?.username||'Unknown';
     const color = getColor(isOwn ? currentUser.email : name);
     const initial = getInitial(isOwn ? (currentProfile?.display_name||currentUser.email) : name);
 
@@ -788,7 +788,7 @@
           const { data: p } = await window.AF.db
             .from('profiles').select('display_name,username')
             .eq('id', m.sender_id).single();
-          m.profiles = p;
+          m.sender = p;
           appendMsg(m);
           markRead(id);
           await loadThreads();
