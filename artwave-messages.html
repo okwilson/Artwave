@@ -156,13 +156,14 @@
   .m-img-protected {
     position: relative; margin-top: 0.4rem; border-radius: 8px;
     overflow: hidden; max-width: 220px; border: 2px solid #01415B;
-    box-shadow: 3px 3px 0 #01415B;
+    box-shadow: 3px 3px 0 #01415B; display: block;
   }
   .m-img-protected img {
     width: 100%; display: block;
-    filter: blur(1px) brightness(0.85);
+    filter: blur(6px) brightness(0.7);
     pointer-events: none; user-select: none;
     -webkit-user-drag: none;
+    min-height: 80px;
   }
   .m-img-protected::after {
     content: '';
@@ -602,8 +603,8 @@
     }
 
     // Check if commission is fully paid
-    const activeThread = allThreads.find(t => t.id === activeCommissionId);
-    const isPaid = activeThread?.final_paid || activeThread?.status === 'paid';
+    const activeThread = allThreads.find(t => t.id === activeCommissionId) || {};
+    const isPaid = activeThread.final_paid || activeThread.status === 'paid';
     const isArtist = currentProfile?.is_artist;
 
     let lastDate = null;
@@ -619,16 +620,16 @@
       // Determine image display
       let imgHtml = '';
       if (m.attachment_url) {
-        const senderIsArtist = m.sender_id === activeThread?.artist_id;
+        const senderIsArtist = activeThread.artist_id && m.sender_id === activeThread.artist_id;
         // Watermark if: sent by artist AND client hasn't paid final yet AND viewer is client
         const shouldWatermark = senderIsArtist && !isPaid && !isArtist;
 
         if (shouldWatermark) {
           imgHtml = `
             <div class="m-img-protected" oncontextmenu="return false">
-              <img src="${m.attachment_url}" draggable="false"/>
+              <img src="${m.attachment_url}" draggable="false" onerror="this.style.minHeight='100px';this.style.background='#c8dba0'"/>
               <div class="watermark-label">
-                <div class="watermark-text">Artwave<br/>Final payment required<br/>to unlock</div>
+                <div class="watermark-text">Artwave<br/>Final payment required to unlock</div>
               </div>
             </div>`;
         } else if (isPaid && !isArtist && senderIsArtist) {
@@ -729,10 +730,10 @@
     const color = getColor(isOwn ? currentUser.email : name);
     const initial = getInitial(isOwn ? (currentProfile?.display_name||currentUser.email) : name);
 
-    const activeThread = allThreads.find(t => t.id === activeCommissionId);
-    const isPaid = activeThread?.final_paid || activeThread?.status === 'paid';
+    const activeThread = allThreads.find(t => t.id === activeCommissionId) || {};
+    const isPaid = activeThread.final_paid || activeThread.status === 'paid';
     const isArtist = currentProfile?.is_artist;
-    const senderIsArtist = m.sender_id === activeThread?.artist_id;
+    const senderIsArtist = activeThread.artist_id && m.sender_id === activeThread.artist_id;
     const shouldWatermark = senderIsArtist && !isPaid && !isArtist;
 
     let imgHtml = '';
@@ -740,9 +741,9 @@
       if (shouldWatermark) {
         imgHtml = `
           <div class="m-img-protected" oncontextmenu="return false">
-            <img src="${m.attachment_url}" draggable="false"/>
+            <img src="${m.attachment_url}" draggable="false" onerror="this.style.minHeight='100px';this.style.background='#c8dba0'"/>
             <div class="watermark-label">
-              <div class="watermark-text">Artwave<br/>Final payment required<br/>to unlock</div>
+              <div class="watermark-text">Artwave<br/>Final payment required to unlock</div>
             </div>
           </div>`;
       } else {
