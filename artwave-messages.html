@@ -410,7 +410,7 @@
               onkeydown="handleKey(event)"
               oninput="autoResize(this)"></textarea>
             <button class="attach-trigger" onclick="document.getElementById('file-input').click()">📎</button>
-            <input type="file" id="file-input" class="file-input" accept="image/*" onchange="handleFile(this)"/>
+            <input type="file" id="file-input" class="file-input" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/quicktime,video/webm,video/avi" onchange="handleFile(this)"/>
           </div>
           <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
         </div>
@@ -644,13 +644,15 @@
       let imgHtml = '';
       if (m.attachment_url) {
         const senderIsArtist = activeThread.artist_id && m.sender_id === activeThread.artist_id;
-        // Watermark if: sent by artist AND client hasn't paid final yet AND viewer is client
         const shouldWatermark = senderIsArtist && !isPaid && !isArtist;
+        const isVideo = m.attachment_type === 'video' || /\.(mp4|mov|webm|avi|quicktime)$/i.test(m.attachment_url);
 
         if (shouldWatermark) {
           imgHtml = `
             <div class="m-img-protected" oncontextmenu="return false">
-              <img src="${m.attachment_url}" draggable="false" onerror="this.style.minHeight='100px';this.style.background='#c8dba0'"/>
+              ${isVideo
+                ? `<video src="${m.attachment_url}" muted style="width:100%;filter:blur(2px);pointer-events:none;display:block"></video>`
+                : `<img src="${m.attachment_url}" draggable="false"/>`}
               <div class="watermark-label">
                 <div class="watermark-text">Artwave<br/>Final payment required to unlock</div>
               </div>
@@ -658,11 +660,15 @@
         } else if (isPaid && !isArtist && senderIsArtist) {
           imgHtml = `
             <div class="m-img-unlocked">
-              <img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/>
+              ${isVideo
+                ? `<video src="${m.attachment_url}" controls style="width:100%;border-radius:4px;display:block"></video>`
+                : `<img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/>`}
             </div>
             <a href="${m.attachment_url}" download target="_blank" class="download-btn">Download</a>`;
         } else {
-          imgHtml = `<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`;
+          imgHtml = isVideo
+            ? `<div class="m-img"><video src="${m.attachment_url}" controls style="width:100%;border-radius:4px;display:block"></video></div>`
+            : `<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`;
         }
       }
 
@@ -689,16 +695,42 @@
 
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
+    btn.innerHTML = '⏳';
 
     let attachmentUrl = null;
+    let attachmentType = null;
+
     if (pendingFile) {
-      const ext = pendingFile.name.split('.').pop();
+      btn.innerHTML = '📤';
+      const ext = pendingFile.name.split('.').pop().toLowerCase();
       const path = `messages/${currentUser.id}/${Date.now()}.${ext}`;
-      const { error: upErr } = await window.AF.db.storage.from('portfolio').upload(path, pendingFile);
-      if (!upErr) {
-        const { data: urlData } = window.AF.db.storage.from('portfolio').getPublicUrl(path);
-        attachmentUrl = urlData.publicUrl;
+
+      const { error: upErr } = await window.AF.db.storage
+        .from('portfolio')
+        .upload(path, pendingFile, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: pendingFile.type
+        });
+
+      if (upErr) {
+        console.error('Upload error:', upErr);
+        showToast('File upload failed: ' + upErr.message);
+        btn.disabled = false;
+        btn.innerHTML = '➤';
+        return;
       }
+
+      const { data: urlData } = window.AF.db.storage.from('portfolio').getPublicUrl(path);
+      attachmentUrl = urlData.publicUrl;
+
+      // Detect type
+      if (pendingFile.type.startsWith('video') || ['mp4','mov','avi','webm','quicktime'].includes(ext)) {
+        attachmentType = 'video';
+      } else {
+        attachmentType = 'image';
+      }
+
       pendingFile = null;
       document.getElementById('attach-previews').innerHTML = '';
       document.getElementById('file-input').value = '';
@@ -727,7 +759,7 @@
         sender_id: currentUser.id,
         body: body || null,
         attachment_url: attachmentUrl || null,
-        attachment_type: attachmentUrl ? 'image' : null,
+        attachment_type: attachmentType,
         is_read: false
       });
 
@@ -769,16 +801,21 @@
 
     let imgHtml = '';
     if (m.attachment_url) {
+      const isVideo = m.attachment_type === 'video' || /\.(mp4|mov|webm|avi|quicktime)$/i.test(m.attachment_url);
       if (shouldWatermark) {
         imgHtml = `
           <div class="m-img-protected" oncontextmenu="return false">
-            <img src="${m.attachment_url}" draggable="false" onerror="this.style.minHeight='100px';this.style.background='#c8dba0'"/>
+            ${isVideo
+              ? `<video src="${m.attachment_url}" muted style="width:100%;filter:blur(2px);pointer-events:none;display:block"></video>`
+              : `<img src="${m.attachment_url}" draggable="false"/>`}
             <div class="watermark-label">
               <div class="watermark-text">Artwave<br/>Final payment required to unlock</div>
             </div>
           </div>`;
       } else {
-        imgHtml = `<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`;
+        imgHtml = isVideo
+          ? `<div class="m-img"><video src="${m.attachment_url}" controls style="width:100%;border-radius:4px;display:block"></video></div>`
+          : `<div class="m-img"><img src="${m.attachment_url}" onclick="window.open('${m.attachment_url}','_blank')"/></div>`;
       }
     }
 
