@@ -704,14 +704,17 @@
       btn.innerHTML = '📤';
       const ext = pendingFile.name.split('.').pop().toLowerCase();
       const path = `messages/${currentUser.id}/${Date.now()}.${ext}`;
+      console.log('Uploading file:', pendingFile.name, pendingFile.type, pendingFile.size, 'to path:', path);
 
-      const { error: upErr } = await window.AF.db.storage
+      const { data: upData, error: upErr } = await window.AF.db.storage
         .from('portfolio')
         .upload(path, pendingFile, {
           cacheControl: '3600',
           upsert: false,
           contentType: pendingFile.type
         });
+
+      console.log('Upload result:', { upData, upErr });
 
       if (upErr) {
         console.error('Upload error:', upErr);
