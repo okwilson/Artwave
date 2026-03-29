@@ -589,7 +589,6 @@
     wrap.innerHTML = `<div style="text-align:center;padding:2rem"><div class="spinner"></div></div>`;
 
     const { data: msgs, error } = await window.AF.db
-      .schema('public')
       .from('commission_messages')
       .select('*')
       .eq('commission_id', id)
@@ -721,13 +720,21 @@
     btn.disabled = false;
 
     // Save to database
-    const { data: msgData } = await window.AF.db.from('commission_messages').insert({
-      commission_id: activeCommissionId,
-      sender_id: currentUser.id,
-      body: body || null,
-      attachment_url: attachmentUrl,
-      attachment_type: attachmentUrl ? 'image' : null
-    }).select().single();
+    const { data: msgData, error: msgError } = await window.AF.db
+      .from('commission_messages')
+      .insert({
+        commission_id: activeCommissionId,
+        sender_id: currentUser.id,
+        body: body || null,
+        attachment_url: attachmentUrl || null,
+        attachment_type: attachmentUrl ? 'image' : null,
+        is_read: false
+      });
+
+    if (msgError) {
+      console.error('Send message error:', msgError);
+      showToast('Message not saved: ' + msgError.message);
+    }
 
     // Notify the other person
     const t = allThreads.find(x => x.id === activeCommissionId);
@@ -802,7 +809,7 @@
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'commission_messages', schema: 'public'
+        table: 'commission_messages'
       }, async (payload) => {
           const m = payload.new;
           // Only handle messages for the active commission
