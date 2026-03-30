@@ -156,7 +156,7 @@
   .m-img-protected {
     position: relative; margin-top: 0.4rem; border-radius: 8px;
     overflow: hidden; max-width: 220px; border: 2px solid #01415B;
-    box-shadow: 3px 3px 0 #01415B; display: block;
+    box-shadow: 3px 3px 0 #01415B; display: block; cursor: zoom-in;
   }
   .m-img-protected img, .m-img-protected video {
     width: 100%; display: block;
@@ -178,6 +178,60 @@
     border-radius: 3px; letter-spacing: .08em; text-transform: uppercase;
     font-family: 'DM Sans', sans-serif; white-space: nowrap;
     border: 1px solid #A6BC09;
+  }
+  .watermark-zoom-hint {
+    position: absolute; top: 6px; right: 6px;
+    background: rgba(1,65,91,0.75); color: white;
+    font-size: 0.6rem; font-weight: 700; padding: 0.15rem 0.4rem;
+    border-radius: 3px; font-family: 'DM Sans', sans-serif;
+    pointer-events: none;
+  }
+
+  /* WATERMARK LIGHTBOX */
+  #wm-lightbox {
+    display: none; position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+    cursor: zoom-out;
+  }
+  #wm-lightbox.open { display: flex; }
+  #wm-lightbox-inner {
+    position: relative; max-width: 90vw; max-height: 85vh;
+    border: 3px solid #01415B; border-radius: 8px; overflow: hidden;
+    box-shadow: 8px 8px 0 #01415B;
+  }
+  #wm-lightbox-inner img {
+    max-width: 90vw; max-height: 85vh; display: block;
+    pointer-events: none; user-select: none; -webkit-user-drag: none;
+  }
+  #wm-lightbox-overlay {
+    position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent 0px, transparent 50px,
+      rgba(255,255,255,0.07) 50px, rgba(255,255,255,0.07) 51px
+    );
+  }
+  #wm-lightbox-watermark {
+    position: absolute; inset: 0; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #wm-lightbox-watermark svg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+  }
+  #wm-lightbox-badge {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    background: rgba(1,65,91,0.9); color: #A6BC09;
+    font-size: 0.72rem; font-weight: 800; padding: 0.3rem 0.8rem;
+    border-radius: 3px; letter-spacing: .08em; text-transform: uppercase;
+    font-family: 'DM Sans', sans-serif; white-space: nowrap;
+    border: 1.5px solid #A6BC09;
+  }
+  #wm-lightbox-close {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(1,65,91,0.9); color: white; border: none;
+    width: 30px; height: 30px; border-radius: 50%; font-size: 1rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; z-index: 1;
   }
   .m-img-unlocked {
     margin-top: 0.4rem; border-radius: 8px; overflow: hidden;
@@ -412,6 +466,26 @@
   </div>
 </div>
 
+<!-- WATERMARK LIGHTBOX -->
+<div id="wm-lightbox" onclick="closeWmLightbox()">
+  <div id="wm-lightbox-inner" onclick="event.stopPropagation()">
+    <button id="wm-lightbox-close" onclick="closeWmLightbox()">✕</button>
+    <img id="wm-lightbox-img" src="" alt="WIP Preview"/>
+    <div id="wm-lightbox-overlay"></div>
+    <div id="wm-lightbox-watermark">
+      <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <pattern id="wm-pattern" x="0" y="0" width="200" height="80" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+            <text x="10" y="50" font-family="Arial" font-size="14" font-weight="900" fill="rgba(255,255,255,0.18)" letter-spacing="4">ARTWAVE</text>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#wm-pattern)"/>
+      </svg>
+    </div>
+    <div id="wm-lightbox-badge">🔒 Unlock after final payment</div>
+  </div>
+</div>
+
 <script src="artwave-nav.js"></script>
 <script>
   let currentUser = null;
@@ -641,7 +715,7 @@
 
         if (shouldWatermark) {
           imgHtml = `
-            <div class="m-img-protected" oncontextmenu="return false">
+            <div class="m-img-protected" oncontextmenu="return false" onclick="openWmLightbox(this)">
               ${isVideo
                 ? `<video src="${m.attachment_url}" muted style="width:100%;pointer-events:none;display:block"></video>`
                 : `<img src="${m.attachment_url}" draggable="false"/>`}
@@ -800,7 +874,7 @@
       const isVideo = m.attachment_type === 'video' || /\.(mp4|mov|webm|avi|quicktime)$/i.test(m.attachment_url);
       if (shouldWatermark) {
         imgHtml = `
-          <div class="m-img-protected" oncontextmenu="return false">
+          <div class="m-img-protected" oncontextmenu="return false" onclick="openWmLightbox(this)">
             ${isVideo
               ? `<video src="${m.attachment_url}" muted style="width:100%;pointer-events:none;display:block"></video>`
               : `<img src="${m.attachment_url}" draggable="false"/>`}
@@ -891,6 +965,19 @@
   }
   function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
   function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,110)+'px'; }
+
+  function openWmLightbox(el) {
+    const img = el.querySelector('img');
+    if (!img) return;
+    document.getElementById('wm-lightbox-img').src = img.src;
+    document.getElementById('wm-lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeWmLightbox() {
+    document.getElementById('wm-lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeWmLightbox(); });
 
   init();
 </script>
