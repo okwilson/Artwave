@@ -691,6 +691,7 @@
   async function sendMessage() {
     const input = document.getElementById('msg-input');
     const body = input.value.trim();
+    console.log('sendMessage called - body:', body, 'pendingFile:', pendingFile);
     if (!body && !pendingFile) return;
 
     const btn = document.getElementById('send-btn');
